@@ -147,6 +147,23 @@
   .foot-mark{margin-top:14px;font-family:var(--disp);font-weight:600;color:var(--ink);font-size:.9rem}
   .foot-mark span{color:var(--muted);font-weight:400;font-family:var(--body)}
 
+  .btn.ghost{background:var(--surface);color:var(--accent-dark);border:1.5px solid var(--line)}
+  .btn.ghost:hover{background:var(--accent-tint);border-color:var(--accent)}
+  .btn.small{padding:10px 16px;font-size:.9rem}
+  .qr-row{margin-top:12px}
+  .linkbtn{background:none;border:0;padding:6px 2px;font:inherit;font-weight:600;font-size:.9rem;color:var(--accent-dark);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .linkbtn svg{width:18px;height:18px}
+  .linkbtn:hover{text-decoration:underline}
+  .linkbtn:focus-visible{outline:3px solid var(--ink);outline-offset:2px;border-radius:6px}
+  .qr{margin-top:10px;border:1px dashed var(--line);border-radius:12px;padding:14px;background:#fbfcfe}
+  .qr[hidden],.qr-view[hidden]{display:none}
+  .qr-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .qr-actions .btn{flex:0 0 auto}
+  .qr-view{position:relative;margin-top:12px;border-radius:12px;overflow:hidden;background:#000;max-width:360px;aspect-ratio:1/1}
+  .qr-view video{width:100%;height:100%;object-fit:cover;display:block}
+  .qr-frame{position:absolute;inset:18%;border:3px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.3);pointer-events:none}
+  .qr-note{margin:10px 0 0;font-size:.8rem;color:var(--muted)}
+
   .deep{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:.88rem;color:var(--muted)}
   .deep .spin{border-color:rgba(18,41,74,.2);border-top-color:var(--accent);margin:0}
 
@@ -196,6 +213,22 @@
         </label>
         <button class="btn" id="checkBtn" data-i18n>Check link</button>
       </div>
+      <div class="qr-row">
+        <button class="linkbtn" id="qrBtn" type="button" aria-expanded="false" aria-controls="qrPanel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M17.5 21H21v-3.5"/></svg>
+          <span data-i18n>Scan a QR code</span>
+        </button>
+      </div>
+      <div class="qr" id="qrPanel" hidden>
+        <div class="qr-actions">
+          <button class="btn small" id="qrCam" type="button" data-i18n>Use camera</button>
+          <button class="btn small ghost" id="qrUpload" type="button" data-i18n>Upload image</button>
+          <button class="btn small ghost" id="qrClose" type="button" data-i18n>Close</button>
+        </div>
+        <input type="file" id="qrFile" accept="image/*" hidden>
+        <div class="qr-view" id="qrView" hidden><video id="qrVideo" playsinline muted></video><div class="qr-frame"></div></div>
+        <p class="qr-note" data-i18n>Scanning happens on your device. The picture is never uploaded.</p>
+      </div>
       <div class="examples">
         <span class="lbl" data-i18n>Try an example:</span>
         <button class="chip" data-url="http://paypa1.com/login/verify-account" data-i18n>Obvious scam</button>
@@ -219,6 +252,7 @@
 
 <div id="toast"></div>
 
+<script src="vendor/jsQR.min.js"></script>
 <script>
 /* =========================================================================
    SafeLink — client-side link risk analysis + on-demand translation
@@ -614,6 +648,16 @@ const NE_BUILTIN = {
  "Brand-new website": "एकदमै नयाँ वेबसाइट",
  "Redirects to a different website": "फरक वेबसाइटमा रिडाइरेक्ट गर्छ",
  "Too many redirects": "धेरै रिडाइरेक्टहरू",
+ "Scan a QR code": "QR कोड स्क्यान गर्नुहोस्",
+ "Use camera": "क्यामेरा प्रयोग गर्नुहोस्",
+ "Upload image": "तस्बिर अपलोड गर्नुहोस्",
+ "Close": "बन्द गर्नुहोस्",
+ "Scanning happens on your device. The picture is never uploaded.": "स्क्यान तपाईंकै उपकरणमा हुन्छ। तस्बिर कहिल्यै अपलोड गरिँदैन।",
+ "Camera isn't available in this browser. Try uploading a photo of the QR code instead.": "यो ब्राउजरमा क्यामेरा उपलब्ध छैन। बरु QR कोडको फोटो अपलोड गर्नुहोस्।",
+ "Couldn't open the camera. Allow camera access, or upload a photo of the QR code instead.": "क्यामेरा खोल्न सकिएन। क्यामेरा अनुमति दिनुहोस्, वा QR कोडको फोटो अपलोड गर्नुहोस्।",
+ "That file couldn't be read as an image.": "त्यो फाइल तस्बिरका रूपमा पढ्न सकिएन।",
+ "No QR code found in that image. Try a clearer, closer photo.": "त्यस तस्बिरमा QR कोड भेटिएन। अझ स्पष्ट र नजिकबाट खिचेको फोटो प्रयास गर्नुहोस्।",
+ "This QR code doesn't contain a web link, so there's nothing to check.": "यो QR कोडमा वेब लिङ्क छैन, त्यसैले जाँच्ने केही छैन।",
  "Deeper check paused": "थप जाँच रोकिएको",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "तपाईंले छोटो समयमा धेरै लिङ्क जाँच्नुभयो। थप जाँच फेरि चलाउन कृपया एक मिनेट पर्खनुहोस्।",
  "No warning signs in the address": "ठेगानामा कुनै खतराका सङ्केत छैनन्",
@@ -687,6 +731,16 @@ const JA_BUILTIN = {
  "The final destination looks suspicious": "最終的な行き先が怪しい",
  "Short link opened for you": "短縮リンクを展開しました",
  "Too many redirects": "リダイレクトが多すぎます",
+ "Scan a QR code": "QRコードをスキャン",
+ "Use camera": "カメラを使う",
+ "Upload image": "画像をアップロード",
+ "Close": "閉じる",
+ "Scanning happens on your device. The picture is never uploaded.": "スキャンはお使いの端末上で行われます。画像がアップロードされることはありません。",
+ "Camera isn't available in this browser. Try uploading a photo of the QR code instead.": "このブラウザではカメラを使用できません。代わりにQRコードの写真をアップロードしてください。",
+ "Couldn't open the camera. Allow camera access, or upload a photo of the QR code instead.": "カメラを開けませんでした。カメラへのアクセスを許可するか、QRコードの写真をアップロードしてください。",
+ "That file couldn't be read as an image.": "そのファイルは画像として読み込めませんでした。",
+ "No QR code found in that image. Try a clearer, closer photo.": "その画像にQRコードが見つかりませんでした。より鮮明で近くから撮った写真をお試しください。",
+ "This QR code doesn't contain a web link, so there's nothing to check.": "このQRコードにはウェブリンクが含まれていないため、確認するものがありません。",
  "Deeper check paused": "詳細チェックを一時停止中",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "短時間に多くのリンクを確認しました。詳細チェックを再度行うには、1分ほどお待ちください。",
  "This link bounces through a long chain of redirects, a common way to hide the real destination.": "このリンクは長いリダイレクトの連鎖を経由します。本当の行き先を隠すためによく使われる手口です。",
@@ -874,6 +928,88 @@ function reapplyLang(){ if(currentLang!=="en"){ const l=LANGS.find(x=>x[0]===cur
 const toastEl=document.getElementById("toast");
 function toast(html,persist){toastEl.innerHTML=html;toastEl.classList.add("show");if(!persist)setTimeout(hideToast,2400);}
 function hideToast(){toastEl.classList.remove("show");}
+
+/* ---------- QR code scanner (everything stays on the device; decoding by jsQR) ---------- */
+const qrBtn=document.getElementById("qrBtn"), qrPanel=document.getElementById("qrPanel"),
+      qrView=document.getElementById("qrView"), qrVideo=document.getElementById("qrVideo"), qrFile=document.getElementById("qrFile");
+const qrCanvas=document.createElement("canvas"), qrCtx=qrCanvas.getContext("2d",{willReadFrequently:true});
+let qrStream=null, qrTimer=0;
+
+function decodeFrame(src,w,h){
+  qrCanvas.width=w; qrCanvas.height=h;
+  qrCtx.drawImage(src,0,0,w,h);
+  const d=qrCtx.getImageData(0,0,w,h);
+  const r=window.jsQR&&window.jsQR(d.data,w,h,{inversionAttempts:"attemptBoth"});
+  return r&&r.data?r.data:null;
+}
+function stopCamera(){
+  clearTimeout(qrTimer); qrTimer=0;
+  if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null;}
+  qrVideo.srcObject=null; qrView.hidden=true;
+}
+function openQR(){qrPanel.hidden=false;qrBtn.setAttribute("aria-expanded","true");}
+function closeQR(){stopCamera();qrPanel.hidden=true;qrBtn.setAttribute("aria-expanded","false");}
+function qrProblem(msg){setHint(msg);reapplyLang();}
+
+/* a decoded QR code: check it if it is a web link, otherwise explain */
+function onQR(text){
+  closeQR();
+  const t=text.trim();
+  const isLink=/^(https?:\/\/|(javascript|data|vbscript|ftp|file|blob):)/i.test(t)||/^[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?([\/?#]\S*)?$/i.test(t);
+  if(!isLink){
+    checkSeq++;                                                     // cancel any check still running
+    document.getElementById("result").classList.remove("show");   // don't leave an old verdict on screen
+    qrProblem("This QR code doesn't contain a web link, so there's nothing to check.");return;
+  }
+  document.getElementById("url").value=t;
+  runCheck();
+}
+
+async function startCamera(){
+  if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){
+    qrProblem("Camera isn't available in this browser. Try uploading a photo of the QR code instead.");return;
+  }
+  stopCamera();
+  try{
+    qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+  }catch(_){
+    qrProblem("Couldn't open the camera. Allow camera access, or upload a photo of the QR code instead.");return;
+  }
+  setHint("");
+  qrVideo.srcObject=qrStream; qrView.hidden=false;
+  try{await qrVideo.play();}catch(_){}
+  scanLoop();
+}
+function scanLoop(){
+  if(!qrStream) return;
+  if(qrVideo.readyState>=2&&qrVideo.videoWidth){
+    const sc=Math.min(1,640/qrVideo.videoWidth);
+    const text=decodeFrame(qrVideo,Math.round(qrVideo.videoWidth*sc),Math.round(qrVideo.videoHeight*sc));
+    if(text){onQR(text);return;}
+  }
+  qrTimer=setTimeout(scanLoop,150);
+}
+
+async function scanImageFile(file){
+  let bmp;
+  try{bmp=await createImageBitmap(file);}
+  catch(_){qrProblem("That file couldn't be read as an image.");return;}
+  let text=null;
+  for(const max of [1200,700,2000]){   // photos decode best at different sizes
+    const sc=Math.min(1,max/Math.max(bmp.width,bmp.height));
+    text=decodeFrame(bmp,Math.max(1,Math.round(bmp.width*sc)),Math.max(1,Math.round(bmp.height*sc)));
+    if(text) break;
+  }
+  if(bmp.close) bmp.close();
+  if(text) onQR(text); else qrProblem("No QR code found in that image. Try a clearer, closer photo.");
+}
+
+qrBtn.addEventListener("click",()=>qrPanel.hidden?openQR():closeQR());
+document.getElementById("qrClose").addEventListener("click",closeQR);
+document.getElementById("qrCam").addEventListener("click",startCamera);
+document.getElementById("qrUpload").addEventListener("click",()=>qrFile.click());
+qrFile.addEventListener("change",()=>{const f=qrFile.files&&qrFile.files[0];qrFile.value="";if(f)scanImageFile(f);});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!qrPanel.hidden)closeQR();});
 
 /* init */
 captureStrings();

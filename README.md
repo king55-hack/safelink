@@ -9,6 +9,8 @@ Live: https://safelink.rajanrimal.com.np
 1. **In the browser** – the address and structure of the link are analysed locally (look-alike brands, raw IPs, `@` tricks, risky endings, shorteners, …).
 2. **On a Cloudflare Worker** (`POST /api/check`) – a deeper check follows the redirect chain, looks up the domain's age (RDAP) and, if a key is configured, asks Google Safe Browsing. Only the link itself is sent, and it is not stored.
 
+**QR codes** – "Scan a QR code" reads a QR code with the camera or from an uploaded photo and runs the link through the same checks (protects against "quishing"). Decoding happens entirely on the device with [jsQR](https://github.com/cozmo/jsQR) (Apache-2.0, vendored in `public/vendor/`); the image is never uploaded.
+
 Languages: English, Nepali and Japanese are built in (offline); other languages use online machine translation.
 
 ## Develop
