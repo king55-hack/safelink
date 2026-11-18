@@ -1,0 +1,11 @@
+node_modules/
+.wrangler/
+.dev.vars
+.env
+
+# local-only files (planning docs, backups, original logo source)
+SafeLink.html
+SafeLink.backup.html
+*.pdf
+*.pptx
+safelink  logo.webp
