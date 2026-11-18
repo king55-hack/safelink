@@ -289,7 +289,7 @@
 
 <footer class="wrap">
   <div class="notes">
-    <b data-i18n>Your privacy:</b> <span data-i18n>SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, and it is not stored.</span>
+    <b data-i18n>Your privacy:</b> <span data-i18n>SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks Google Safe Browsing and VirusTotal about it. We don't store it.</span>
     <br><b data-i18n>Good to know:</b> <span data-i18n>SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.</span>
   </div>
   <div class="foot-report"><button class="linkbtn" type="button" id="footReport" data-i18n>Report a scam</button></div>
@@ -609,6 +609,12 @@ async function enrich(r,input,my){
   if(s.safeBrowsing&&s.safeBrowsing.threats&&s.safeBrowsing.threats.length)
     add("danger","Reported as dangerous by Google Safe Browsing","This link is on a known list of scam, malware or harmful sites. Do not open it.",90);
 
+  if(s.virusTotal&&s.virusTotal.checked){
+    const m=s.virusTotal.malicious, flags=m+s.virusTotal.suspicious;
+    if(m>=3) add("danger","Flagged as dangerous by security vendors",m+" security vendors on VirusTotal flag this link as malicious or phishing.",70);
+    else if(m>=1||flags>=2) add("warn","Flagged by a few security vendors",flags+" security vendor"+(flags===1?"":"s")+" on VirusTotal flagged this link. It may be a false alarm, so be careful.",25);
+  }
+
   if(s.reports&&s.reports.count>0){
     const n=s.reports.count;
     add(n>=3?"warn":"info","Reported by other users",n+" "+(n===1?"person has":"people have")+" reported this site as suspicious on SafeLink.",n>=3?20:0);
@@ -684,7 +690,7 @@ const NE_BUILTIN = {
  "Sneaky lookalike": "चलाख नक्कली",
  "Safe site": "सुरक्षित साइट",
  "Your privacy:": "तपाईंको गोपनीयता:",
- "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, and it is not stored.": "SafeLink ले लिङ्कको ठेगाना र बनोट तपाईंकै ब्राउजरभित्र जाँच्छ। थप गहिरो जाँचका लागि लिङ्क मात्र हाम्रो सुरक्षित सर्भरमा पठाइन्छ, र त्यो सुरक्षित गरेर राखिँदैन।",
+ "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks Google Safe Browsing and VirusTotal about it. We don't store it.": "SafeLink ले लिङ्कको ठेगाना र बनोट तपाईंकै ब्राउजरभित्र जाँच्छ। थप गहिरो जाँचका लागि लिङ्क मात्र हाम्रो सुरक्षित सर्भरमा पठाइन्छ, जसले Google Safe Browsing र VirusTotal लाई पनि सोध्छ। हामी यसलाई सुरक्षित गरेर राख्दैनौं।",
  "Good to know:": "जान्न राम्रो:",
  "SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.": "SafeLink ले पहिले लिङ्कमै लेखिएका खतराका सङ्केतहरू पढ्छ, त्यसपछि (अनलाइन हुँदा) सुरक्षित ब्याकएन्डमार्फत रिडाइरेक्टहरू पछ्याउँछ र डोमेनको उमेर जाँच्छ। कुनै पनि उपकरणले लिङ्क सुरक्षित छ भनी ग्यारेन्टी दिन सक्दैन।",
  "— Cybersecurity for everyone, not just experts.": "— साइबर सुरक्षा सबैका लागि, विशेषज्ञका लागि मात्र होइन।",
@@ -767,6 +773,8 @@ const NE_BUILTIN = {
  "Please complete the verification first.": "कृपया पहिले प्रमाणीकरण पूरा गर्नुहोस्।",
  "Couldn't send the report. Please try again later.": "रिपोर्ट पठाउन सकिएन। कृपया पछि फेरि प्रयास गर्नुहोस्।",
  "Reported by other users": "अन्य प्रयोगकर्ताले रिपोर्ट गरेको",
+ "Flagged as dangerous by security vendors": "सुरक्षा कम्पनीहरूले खतरनाक भनी चिन्ह लगाएका",
+ "Flagged by a few security vendors": "केही सुरक्षा कम्पनीहरूले चेतावनी दिएका",
  "Deeper check paused": "थप जाँच रोकिएको",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "तपाईंले छोटो समयमा धेरै लिङ्क जाँच्नुभयो। थप जाँच फेरि चलाउन कृपया एक मिनेट पर्खनुहोस्।",
  "No warning signs in the address": "ठेगानामा कुनै खतराका सङ्केत छैनन्",
@@ -784,7 +792,7 @@ const JA_BUILTIN = {
  "Sneaky lookalike": "巧妙なそっくりサイト",
  "Safe site": "安全なサイト",
  "Your privacy:": "プライバシーについて：",
- "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, and it is not stored.": "SafeLink はリンクのアドレスと構造をまずブラウザ内で確認します。さらに詳しく調べる場合のみ、リンクそのものを安全なサーバーに送信しますが、保存はされません。",
+ "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks Google Safe Browsing and VirusTotal about it. We don't store it.": "SafeLink はリンクのアドレスと構造をまずブラウザ内で確認します。さらに詳しく調べる場合のみ、リンクそのものを安全なサーバーに送信し、Google セーフブラウジングと VirusTotal にも照会します。当サービスでは保存しません。",
  "Good to know:": "ご注意：",
  "SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.": "SafeLink はまずリンク自体に書かれた危険のサインを読み取り、その後（オンライン時は）安全なバックエンドでリダイレクトをたどり、ドメインの年齢を確認します。リンクが安全であると保証できるツールはありません。",
  "— Cybersecurity for everyone, not just experts.": "— 専門家だけでなく、すべての人のためのサイバーセキュリティ。",
@@ -872,6 +880,8 @@ const JA_BUILTIN = {
  "Please complete the verification first.": "先に確認を完了してください。",
  "Couldn't send the report. Please try again later.": "報告を送信できませんでした。後でもう一度お試しください。",
  "Reported by other users": "他のユーザーから報告があります",
+ "Flagged as dangerous by security vendors": "セキュリティベンダーが危険と判定しています",
+ "Flagged by a few security vendors": "一部のセキュリティベンダーが警告しています",
  "Deeper check paused": "詳細チェックを一時停止中",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "短時間に多くのリンクを確認しました。詳細チェックを再度行うには、1分ほどお待ちください。",
  "This link bounces through a long chain of redirects, a common way to hide the real destination.": "このリンクは長いリダイレクトの連鎖を経由します。本当の行き先を隠すためによく使われる手口です。",
@@ -889,6 +899,8 @@ const JA_BUILTIN = {
 /* sentences that contain changing parts (names, numbers): matched by pattern, no network needed */
 const q=t=>t.replace(/\u201d, \u201c/g,"\u300d\u300c");
 const JA_PATTERNS = [
+ [/^(\d+) security vendors on VirusTotal flag this link as malicious or phishing\.$/, m=>"VirusTotal上の"+m[1]+"社のセキュリティベンダーが、このリンクをマルウェアまたはフィッシングとして検出しています。"],
+ [/^(\d+) security vendors? on VirusTotal flagged this link\. It may be a false alarm, so be careful\.$/, m=>"VirusTotal上の"+m[1]+"社のセキュリティベンダーがこのリンクを警告しています。誤検知の可能性もありますが、注意してください。"],
  [/^(\d+) (?:person has|people have) reported this site as suspicious on SafeLink\.$/, m=>m[1]+"人がSafeLinkでこのサイトを怪しいと報告しています。"],
  [/^Uses the name “(.+)” with a suspicious ending$/, m=>"「"+m[1]+"」の名前が不審なドメイン末尾で使われています"],
  [/^“(.+)” is a real brand, but “\.(.+)” is not where it normally lives\. Scammers register the same name under cheap endings\.$/, m=>"「"+m[1]+"」は実在のブランドですが、「."+m[2]+"」は通常使われるドメインではありません。詐欺師は同じ名前を安価なドメインの末尾で登録します。"],

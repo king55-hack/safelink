@@ -80,3 +80,20 @@ export function sanitizeReport(body: any): { ok: true; value: ReportInput } | { 
   const url = (u.protocol + "//" + u.host.replace(/:\d+$/, "") + u.pathname).slice(0, 300);
   return { ok: true, value: { url, host, category, note, lang } };
 }
+
+/* ---------------- VirusTotal ---------------- */
+
+export interface VtStats { malicious: number; suspicious: number; harmless: number; undetected: number }
+
+/** VirusTotal v3 identifies a URL by its unpadded base64url encoding. */
+export function vtUrlId(url: string): string {
+  return btoa(url).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** Pull the engine verdict counts out of a VirusTotal v3 url/domain response. */
+export function parseVtStats(json: any): VtStats | null {
+  const s = json?.data?.attributes?.last_analysis_stats;
+  if (!s || typeof s !== "object") return null;
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+  return { malicious: n(s.malicious), suspicious: n(s.suspicious), harmless: n(s.harmless), undetected: n(s.undetected) };
+}

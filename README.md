@@ -40,9 +40,14 @@ npx wrangler login
 npx wrangler d1 create safelink-reports     # then put the printed id into wrangler.jsonc (d1_databases)
 npx wrangler d1 migrations apply DB --remote
 npx wrangler secret put SAFE_BROWSING_KEY   # optional: Google Safe Browsing API key
+npx wrangler secret put VIRUSTOTAL_KEY      # optional: VirusTotal API key
 npx wrangler secret put TURNSTILE_SECRET    # optional: Turnstile secret (and set TURNSTILE_SITE_KEY in public/index.html)
 npm run deploy
 ```
+
+## VirusTotal
+
+With `VIRUSTOTAL_KEY` set, the Worker asks VirusTotal what its security engines say about the link's final URL (and the domain if the URL is unknown). 3+ engines flagging it = dangerous; 1–2 = "be careful" (it can be a false alarm). Answers are cached for an hour because the free API allows only ~4 requests/minute, and quota errors are skipped silently. The free VirusTotal API is for non-commercial use only.
 
 ## Report a scam
 

@@ -1,9 +1,11 @@
-import { blockedReason, parseInput, parseRdap, registrableDomain, sanitizeReport, type RdapInfo } from "./lib.ts";
+import { blockedReason, parseInput, parseRdap, parseVtStats, registrableDomain, sanitizeReport, vtUrlId, type RdapInfo, type VtStats } from "./lib.ts";
 
 export interface Env {
   ASSETS: Fetcher;
   /** Optional: Google Safe Browsing v4 key (wrangler secret put SAFE_BROWSING_KEY) */
   SAFE_BROWSING_KEY?: string;
+  /** Optional: VirusTotal API key (wrangler secret put VIRUSTOTAL_KEY) */
+  VIRUSTOTAL_KEY?: string;
   /** Per-IP rate limiter (see "ratelimits" in wrangler.jsonc) */
   CHECK_LIMITER?: RateLimit;
   /** Per-IP limiter for /api/report */
@@ -98,6 +100,35 @@ async function safeBrowsing(urls: string[], key: string | undefined): Promise<{ 
   } catch {
     return { checked: false, threats: [] };
   }
+}
+
+/** One VirusTotal GET, cached for an hour (the free API allows only ~4 requests/minute). null = quota/outage. */
+async function vtGet(path: string, key: string): Promise<{ status: number; json: any } | null> {
+  const cache = caches.default;
+  const cacheKey = new Request("https://vt-cache.safelink.invalid" + path);
+  const hit = await cache.match(cacheKey);
+  if (hit) return { status: Number(hit.headers.get("x-vt-status")), json: await hit.json() };
+  try {
+    const res = await fetch("https://www.virustotal.com/api/v3" + path, { headers: { "x-apikey": key, accept: "application/json" }, signal: AbortSignal.timeout(4000) });
+    if (res.status === 429 || res.status >= 500 || res.status === 401 || res.status === 403) return null; // quota / bad key: never cache
+    const json = res.ok ? await res.json() : null;
+    await cache.put(cacheKey, new Response(JSON.stringify(json), { headers: { "content-type": "application/json", "cache-control": "max-age=3600", "x-vt-status": String(res.status) } }));
+    return { status: res.status, json };
+  } catch {
+    return null;
+  }
+}
+
+/** Ask VirusTotal what its security engines say about the final URL (falls back to the domain if the URL is unknown). */
+async function virusTotal(finalUrl: string, host: string, key: string | undefined): Promise<({ checked: true } & VtStats) | { checked: false }> {
+  if (!key) return { checked: false };
+  let r = await vtGet("/urls/" + vtUrlId(finalUrl), key);
+  let stats = r?.status === 200 ? parseVtStats(r.json) : null;
+  if (!stats && r?.status === 404) {
+    r = await vtGet("/domains/" + encodeURIComponent(registrableDomain(host)), key);
+    stats = r?.status === 200 ? parseVtStats(r.json) : null;
+  }
+  return stats ? { checked: true, ...stats } : { checked: false };
 }
 
 /** How many different people reported these hosts (each reporter counts once per site). */
@@ -201,10 +232,11 @@ async function handleCheck(request: Request, env: Env): Promise<Response> {
   const blocked = !!blockedReason(start);
 
   // independent lookups run in parallel; we judge the domain the link really lands on
-  const [age, sb, reported] = await Promise.all([
+  const [age, sb, reported, vt] = await Promise.all([
     blocked ? Promise.resolve(null) : domainAge(finalHost),
     blocked ? Promise.resolve({ checked: false, threats: [] as string[] }) : safeBrowsing([...new Set([start.href, finalUrl])], env.SAFE_BROWSING_KEY),
     reportCount(env, [...new Set([start.hostname.toLowerCase(), finalHost.toLowerCase()])]),
+    blocked ? Promise.resolve({ checked: false as const }) : virusTotal(finalUrl, finalHost, env.VIRUSTOTAL_KEY),
   ]);
 
   return json({
@@ -217,6 +249,7 @@ async function handleCheck(request: Request, env: Env): Promise<Response> {
     domain: age,
     safeBrowsing: sb,
     reports: { count: reported },
+    virusTotal: vt,
   });
 }
 

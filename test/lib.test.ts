@@ -64,3 +64,18 @@ test("sanitizeReport rejects junk", () => {
     { url: 123, category: "other" }, null, "str",
   ]) assert.equal(sanitizeReport(bad as any).ok, false, JSON.stringify(bad));
 });
+
+import { parseVtStats, vtUrlId } from "../src/lib.ts";
+
+test("vtUrlId is unpadded base64url", () => {
+  assert.equal(vtUrlId("http://www.example.com/"), "aHR0cDovL3d3dy5leGFtcGxlLmNvbS8");
+  assert.ok(!/[+/=]/.test(vtUrlId("https://a.top/?>>>???")));
+});
+
+test("parseVtStats", () => {
+  const ok = parseVtStats({ data: { attributes: { last_analysis_stats: { malicious: 5, suspicious: 1, harmless: 60, undetected: 20, timeout: 0 } } } });
+  assert.deepEqual(ok, { malicious: 5, suspicious: 1, harmless: 60, undetected: 20 });
+  assert.equal(parseVtStats({}), null);
+  assert.equal(parseVtStats(null), null);
+  assert.deepEqual(parseVtStats({ data: { attributes: { last_analysis_stats: { malicious: -3, suspicious: "x" } } } }), { malicious: 0, suspicious: 0, harmless: 0, undetected: 0 });
+});
