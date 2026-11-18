@@ -1,6 +1,6 @@
 /** Pure helpers (no Workers APIs) so they can be unit-tested with `node --test`. */
 
-const MULTI_TLDS = ["co.uk","org.uk","gov.uk","ac.uk","co.jp","or.jp","ne.jp","com.au","net.au","org.au","co.nz","com.br","com.mx","co.in","co.kr","com.tr","com.sg","com.hk","com.tw"];
+const MULTI_TLDS = ["co.uk","org.uk","gov.uk","ac.uk","co.jp","or.jp","ne.jp","com.au","net.au","org.au","co.nz","com.br","com.mx","co.in","co.kr","com.tr","com.sg","com.hk","com.tw","com.np","org.np","edu.np","gov.np","net.np","com.pk","com.bd","com.lk","co.id","co.th","com.my","com.ph","com.vn","com.ar","com.cn","co.za","com.ng","co.ke"];
 
 export function registrableDomain(host: string): string {
   const p = host.toLowerCase().split(".");

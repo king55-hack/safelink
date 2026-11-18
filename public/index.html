@@ -259,29 +259,44 @@
    ========================================================================= */
 
 /* ---------- known brands (their name being imitated is a red flag) ---------- */
-const BRANDS = ["paypal","google","apple","icloud","microsoft","office365","outlook","amazon","facebook","instagram","whatsapp","netflix","linkedin","ebay","dropbox","adobe","steam","spotify","tiktok","snapchat","yahoo","gmail","twitter","coinbase","binance","metamask","dhl","fedex","ups","usps","chase","wellsfargo","bankofamerica","citibank","hsbc","barclays","santander","revolut","rakuten","mercari","line","mufg","smbc","mizuho","jcb","aeon"];
+const BRANDS = ["paypal","google","apple","icloud","microsoft","office365","outlook","hotmail","amazon","facebook","instagram","whatsapp","netflix","linkedin","ebay","dropbox","adobe","steam","spotify","tiktok","snapchat","yahoo","gmail","twitter","telegram","discord","zoom","docusign","skype","onedrive","protonmail","github","gitlab","cloudflare","okta","shopify","stripe","airbnb","booking","uber","walmart","tesla","samsung","huawei","xiaomi","alibaba","aliexpress","temu","shein","venmo","cashapp","zelle","coinbase","binance","metamask","kraken","blockchain","trustwallet","opensea","ledger","dhl","fedex","ups","usps","royalmail","canadapost","auspost","irs","chase","wellsfargo","bankofamerica","citibank","hsbc","barclays","santander","revolut","monzo","wise","visa","mastercard","americanexpress","capitalone","hdfc","icici","rakuten","mercari","line","mufg","smbc","mizuho","jcb","aeon","paypay","docomo","softbank","kddi","resona","japanpost","yamato","sagawa","uniqlo","nintendo","playstation","sony","zozotown","sbi","esewa","khalti","fonepay","imepay","nabilbank","nicasia","globalime","everestbank","ncell","daraz","foodmandu"];
 
 /* ---------- abused TLDs & url shorteners ---------- */
 const RISKY_TLDS = ["zip","mov","tk","ml","ga","cf","gq","xyz","top","click","country","kim","work","link","rest","fit","loan","men","gdn","review","stream","download","racing","win","bid","date","faith","cricket","science","party"];
 const SHORTENERS = ["bit.ly","tinyurl.com","t.co","goo.gl","ow.ly","is.gd","buff.ly","rebrand.ly","cutt.ly","shorturl.at","rb.gy","t.ly","tiny.cc","bl.ink","soo.gd","s.id"];
 const ACTION_WORDS = ["login","log-in","signin","sign-in","verify","secure","account","update","confirm","banking","wallet","unlock","suspend","password","billing","payment","invoice","recover","support","alert"];
 /* real domains owned by big brands that legitimately contain the brand name */
-const BRAND_SAFE_DOMAINS = ["amazonaws.com","microsoftonline.com","googleapis.com","googleusercontent.com","googlevideo.com","gstatic.com","fbcdn.net","cloudfront.net","windows.net","azurewebsites.net"];
-const MULTI_TLDS = ["co.uk","org.uk","gov.uk","ac.uk","co.jp","or.jp","ne.jp","com.au","net.au","org.au","co.nz","com.br","com.mx","co.in","co.kr","com.tr","com.sg","com.hk","com.tw"];
+const BRAND_SAFE_DOMAINS = ["amazonaws.com","amazon-adsystem.com","microsoftonline.com","microsoftstore.com","windows.net","azurewebsites.net","googleapis.com","googleusercontent.com","googlevideo.com","googlesource.com","googlemail.com","googleadservices.com","googletagmanager.com","googlesyndication.com","google-analytics.com","gstatic.com","fbcdn.net","facebookmail.com","cdninstagram.com","whatsapp.net","cloudfront.net","paypalobjects.com","githubusercontent.com","myshopify.com","icloud-content.com","steampowered.com","rakuten-card.co.jp","rakuten-sec.co.jp","rakuten-bank.co.jp","smbc-card.com","mizuhobank.co.jp","mizuho-fg.co.jp","mizuho-sc.com","nttdocomo.co.jp","paypay-card.co.jp","paypay-bank.co.jp","resonabank.co.jp","kuronekoyamato.co.jp","sagawa-exp.co.jp",
+    // other real domains that contain a brand name
+    "live.com","office.com","axiata.com","nicasiabank.com","globalimebank.com"];
+/* a brand name on one of these endings (paypal.xyz) is almost never the real company */
+const BRAND_BAD_TLDS = [...RISKY_TLDS,"icu","buzz","cyou","sbs","cfd","vip","pw","cc","ws","cam","monster"];
+const BRAND_ODD_TLDS = ["info","biz","online","site","shop","store","live","club","space","website","tech"];
+/* words scammers glue onto a short brand name: appleid, paypay-login, line-support ... */
+/* brands that are also ordinary words: "bookings.com" or "blockchain.news" must not match */
+const COMMON_WORD_BRANDS = ["booking","ledger","blockchain","kraken","wise","steam"];
+const DECOR = ["id","ids","pay","login","signin","support","secure","security","care","mail","service","services","verify","account","accounts","app","online","card","bank","help","update","web","official","wallet","shop","store","jp","us","inc","team","center","confirm"];
+const MULTI_TLDS = ["co.uk","org.uk","gov.uk","ac.uk","co.jp","or.jp","ne.jp","com.au","net.au","org.au","co.nz","com.br","com.mx","co.in","co.kr","com.tr","com.sg","com.hk","com.tw","com.np","org.np","edu.np","gov.np","net.np","com.pk","com.bd","com.lk","co.id","co.th","com.my","com.ph","com.vn","com.ar","com.cn","co.za","com.ng","co.ke"];
 
 /* ---------- helpers ---------- */
-function normalizeLookalikes(s){
+/* "skeleton": what a name looks like at a glance. Digits become the letters they imitate and
+   look-alike letter groups collapse (rn->m, vv->w, cl->d, i->l); dashes/dots are dropped.
+   paypa1, paypai, pay-pal, arnazon, g00gle all share a skeleton with the real brand. */
+function skeleton(s){
+  const digit={"0":"o","1":"l","|":"l","!":"l","$":"s","@":"a","3":"e","5":"s","7":"t","9":"g"};
   return s.toLowerCase()
-    .replace(/rn/g,"m").replace(/vv/g,"w")
-    .replace(/0/g,"o").replace(/1/g,"l").replace(/3/g,"e")
-    .replace(/5/g,"s").replace(/7/g,"t").replace(/\$/g,"s")
+    .replace(/[01|!$@3579]/g,c=>digit[c])
+    .replace(/rn/g,"m").replace(/vv/g,"w").replace(/cl/g,"d").replace(/i/g,"l")
     .replace(/[^a-z]/g,"");
 }
+/* edit distance that also counts swapped neighbours (googel -> google) as one edit */
 function lev(a,b){
   const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
   for(let j=0;j<=n;j++)d[0][j]=j;
-  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){
     d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+    if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]) d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1);
+  }
   return d[m][n];
 }
 function getRegistrable(host){
@@ -341,27 +356,47 @@ function analyze(raw){
   /* typosquatting + brand misuse */
   let brandFlagged=false;
   const brandSafe=BRAND_SAFE_DOMAINS.includes(domain);
-  const normSld=normalizeLookalikes(sld);
-  for(const b of BRANDS){
-    if(brandSafe) break;
-    if(sld===b){ /* legit exact brand as its own domain */ continue; }
-    const d=lev(normSld,b);
-    const lookalikeExact=(normSld===b && sld!==b); // e.g. paypa1 -> paypal
-    // fuzzy typos only for longer brands (short ones like "chase"/"line" collide with real words)
-    const fuzzy=(d===1 && b.length>=5 && normSld[0]===b[0]) || (d===2 && b.length>=8);
-    if(b.length>=4 && (lookalikeExact || fuzzy)){
-      add("danger","Looks like \u201c"+b+"\u201d but isn't","The address is a near-copy of "+b+" ("+u.hostname+"). Tiny spelling changes or look-alike characters like this are how fake sites trick people.",65);
-      brandFlagged=true; break;
-    }
-  }
-  if(!brandFlagged&&!brandSafe){
-    const tokens=host.split(/[.\-]/);
-    for(const b of BRANDS){
-      // short brand names must match a whole word, otherwise "timeline.com" would match "line"
-      const inHost=(b.length>=6?host.includes(b):tokens.includes(b))&&sld!==b;
-      if(inHost){
-        add("danger","Uses the name \u201c"+b+"\u201d in the wrong place","\u201c"+b+"\u201d appears in the address, but the real owner of this link is \u201c"+domain+"\u201d \u2014 not "+b+". Scammers put trusted names in the front to look official.",60);
-        brandFlagged=true; break;
+  if(!brandSafe){
+    const bTld=domain.split(".").pop();
+    const sldSk=skeleton(sld);
+    if(BRANDS.includes(sld)){
+      // the brand's own name, but on a cheap ending: paypal.xyz, amazon.tk
+      const bad=BRAND_BAD_TLDS.includes(bTld), odd=BRAND_ODD_TLDS.includes(bTld);
+      if(bad||odd){
+        add(bad?"danger":"warn","Uses the name \u201c"+sld+"\u201d with a suspicious ending","\u201c"+sld+"\u201d is a real brand, but \u201c."+bTld+"\u201d is not where it normally lives. Scammers register the same name under cheap endings.",bad?60:40);
+        brandFlagged=true;
+      }
+    } else {
+      // 1) look-alike characters or odd punctuation (paypa1, g00gle, arnazon, pay-pal) or 2) a typo (googel, netfilx)
+      for(const b of BRANDS){
+        const sb=skeleton(b);
+        const lookalike=b.length>=4 && sldSk===sb;
+        let typo=false;
+        if(b.length>=6&&/^[a-z]+$/.test(b)){   // (brands with digits, e.g. office365, are not fuzzy-matched)
+          const d=lev(sldSk,sb);
+          // a letter added/removed at the very end usually makes another real word (strip/stripe, bookings/booking)
+          const endOnly=b.length<=7 && (sldSk===sb+sldSk.slice(-1)&&sldSk.length===sb.length+1 || sb===sldSk+sb.slice(-1)&&sb.length===sldSk.length+1);
+          typo=!endOnly&&(d===1||(d===2&&b.length>=9));
+        }
+        if(lookalike||typo){
+          add("danger","Looks like \u201c"+b+"\u201d but isn't","The address is a near-copy of "+b+" ("+u.hostname+"). Tiny spelling changes or look-alike characters like this are how fake sites trick people.",65);
+          brandFlagged=true; break;
+        }
+      }
+      // 3) the brand name used as bait: appleid-verify.com, secure-paypa1.com, appleid.apple.com.evil.ru
+      if(!brandFlagged){
+        const tokens=host.split(/[.\-]/);
+        for(const b of BRANDS){
+          const sb=skeleton(b);
+          const hit=(b.length>=6&&!COMMON_WORD_BRANDS.includes(b))
+            ? (host.includes(b)||sldSk.includes(sb))
+            // short names must be a whole word (or word + typical bait word), otherwise "timeline.com" would match "line"
+            : tokens.some(t=>t===b||(b.length>=4&&skeleton(t)===sb)||(t.startsWith(b)&&DECOR.includes(t.slice(b.length)))||(t.endsWith(b)&&DECOR.includes(t.slice(0,-b.length))));
+          if(hit){
+            add("danger","Uses the name \u201c"+b+"\u201d in the wrong place","\u201c"+b+"\u201d appears in the address, but the real owner of this link is \u201c"+domain+"\u201d \u2014 not "+b+". Scammers put trusted names in the front to look official.",60);
+            brandFlagged=true; break;
+          }
+        }
       }
     }
   }
@@ -758,6 +793,8 @@ const JA_BUILTIN = {
 /* sentences that contain changing parts (names, numbers): matched by pattern, no network needed */
 const q=t=>t.replace(/\u201d, \u201c/g,"\u300d\u300c");
 const JA_PATTERNS = [
+ [/^Uses the name “(.+)” with a suspicious ending$/, m=>"「"+m[1]+"」の名前が不審なドメイン末尾で使われています"],
+ [/^“(.+)” is a real brand, but “\.(.+)” is not where it normally lives\. Scammers register the same name under cheap endings\.$/, m=>"「"+m[1]+"」は実在のブランドですが、「."+m[2]+"」は通常使われるドメインではありません。詐欺師は同じ名前を安価なドメインの末尾で登録します。"],
  [/^Looks like “(.+)” but isn't$/, m=>"「"+m[1]+"」に似ていますが、別物です"],
  [/^The address is a near-copy of (.+) \((.+)\)\. Tiny spelling changes or look-alike characters like this are how fake sites trick people\.$/, m=>"このアドレスは "+m[1]+"（"+m[2]+"）のほぼコピーです。このようなわずかなつづりの違いや似た文字は、偽サイトが人をだます手口です。"],
  [/^Uses the name “(.+)” in the wrong place$/, m=>"「"+m[1]+"」の名前が不自然な場所で使われています"],

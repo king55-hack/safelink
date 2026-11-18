@@ -13,6 +13,17 @@ Live: https://safelink.rajanrimal.com.np
 
 Languages: English, Nepali and Japanese are built in (offline); other languages use online machine translation.
 
+## Lookalike / typosquatting detection
+
+The analyzer compares the domain with ~130 well-known brands (global, Japan, Nepal):
+
+- **Look-alike skeleton** – digits and look-alike letters are normalised (`paypa1`, `paypai`, `g00gle`, `arnazon`, `pay-pal` all match `paypal`).
+- **Typos** – one swapped/missing/extra letter (`googel`, `netfilx`, `paypall`).
+- **Bait names** – the brand glued to words like `login`/`verify` or placed in a subdomain (`appleid-verify.com`, `appleid.apple.com.evil.ru`).
+- **Wrong ending** – the real brand name on a cheap TLD (`paypal.xyz`, `amazon.tk`).
+
+Official domains that legitimately contain a brand (`rakuten-card.co.jp`, `amazonaws.com`, …) are in `BRAND_SAFE_DOMAINS` in `public/index.html`. `npm test` runs ~80 scam and ~150 real-site cases against it, so add a case whenever you add a brand or exception.
+
 ## Develop
 
 ```sh
