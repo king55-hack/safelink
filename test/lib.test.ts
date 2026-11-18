@@ -79,3 +79,43 @@ test("parseVtStats", () => {
   assert.equal(parseVtStats(null), null);
   assert.deepEqual(parseVtStats({ data: { attributes: { last_analysis_stats: { malicious: -3, suspicious: "x" } } } }), { malicious: 0, suspicious: 0, harmless: 0, undetected: 0 });
 });
+
+import { pageParams, summarizeCerts, timingSafeEqualBytes } from "../src/lib.ts";
+
+test("summarizeCerts picks the newest currently-valid certificate", () => {
+  const now = Date.parse("2026-11-18T00:00:00Z");
+  const list = [
+    { not_before: "2026-09-24T14:37:37Z", not_after: "2026-12-23T14:37:36Z", issuer: { friendly_name: "Google Trust Services" } },
+    { not_before: "2026-10-04T18:34:51Z", not_after: "2027-01-02T18:34:50Z", issuer: { friendly_name: "Let's Encrypt" } },
+    { not_before: "2026-11-01T00:00:00Z", not_after: "2026-11-10T00:00:00Z", issuer: { friendly_name: "Expired CA" } }, // already expired
+    { not_before: "2026-11-10T00:00:00Z", not_after: "2027-02-10T00:00:00Z", revoked: true, issuer: { friendly_name: "Revoked CA" } },
+  ];
+  const s = summarizeCerts(list, now);
+  assert.equal(s?.issuer, "Let's Encrypt");
+  assert.equal(s?.daysLeft, 45);
+  assert.equal(s?.notAfter, "2027-01-02T18:34:50.000Z");
+});
+
+test("summarizeCerts stays quiet when it cannot know", () => {
+  assert.equal(summarizeCerts([]), null);
+  assert.equal(summarizeCerts(null), null);
+  assert.equal(summarizeCerts({}), null);
+  assert.equal(summarizeCerts(Array.from({ length: 100 }, () => ({ not_before: "2020-01-01T00:00:00Z", not_after: "2099-01-01T00:00:00Z" }))), null); // truncated page
+  // issuer falls back to the O= field and is sanitised
+  const s = summarizeCerts([{ not_before: "2020-01-01T00:00:00Z", not_after: "2099-01-01T00:00:00Z", issuer: { name: "C=US, O=Some CA\u0001, CN=X" } }]);
+  assert.equal(s?.issuer, "Some CA");
+});
+
+test("timingSafeEqualBytes", () => {
+  assert.equal(timingSafeEqualBytes(new Uint8Array([1, 2, 3]), new Uint8Array([1, 2, 3])), true);
+  assert.equal(timingSafeEqualBytes(new Uint8Array([1, 2, 3]), new Uint8Array([1, 2, 4])), false);
+  assert.equal(timingSafeEqualBytes(new Uint8Array([1, 2]), new Uint8Array([1, 2, 3])), false);
+});
+
+test("pageParams clamps input", () => {
+  assert.deepEqual(pageParams(new URLSearchParams("")), { limit: 100, offset: 0 });
+  assert.deepEqual(pageParams(new URLSearchParams("limit=5&offset=10")), { limit: 5, offset: 10 });
+  assert.deepEqual(pageParams(new URLSearchParams("limit=99999&offset=-3")), { limit: 200, offset: 0 });
+  assert.deepEqual(pageParams(new URLSearchParams("limit=abc&offset=1.5")), { limit: 100, offset: 0 });
+  assert.deepEqual(pageParams(new URLSearchParams("limit=0")), { limit: 1, offset: 0 });
+});

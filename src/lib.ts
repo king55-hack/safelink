@@ -97,3 +97,51 @@ export function parseVtStats(json: any): VtStats | null {
   const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
   return { malicious: n(s.malicious), suspicious: n(s.suspicious), harmless: n(s.harmless), undetected: n(s.undetected) };
 }
+
+/* ---------------- certificates (Certificate Transparency data) ---------------- */
+
+export interface CertSummary { issuer: string; notBefore: string; notAfter: string; daysLeft: number }
+
+/**
+ * Pick the newest currently-valid certificate from a CertSpotter "issuances" list.
+ * A full page (100 entries) means we cannot see the newest one, so we say nothing rather than guess.
+ */
+export function summarizeCerts(list: any, now = Date.now()): CertSummary | null {
+  if (!Array.isArray(list) || list.length === 0 || list.length >= 100) return null;
+  let best: { nb: number; na: number; issuer: string } | null = null;
+  for (const c of list) {
+    const nb = Date.parse(c?.not_before), na = Date.parse(c?.not_after);
+    if (!Number.isFinite(nb) || !Number.isFinite(na) || c?.revoked === true) continue;
+    if (nb > now || na < now) continue;
+    if (!best || nb > best.nb) {
+      const raw = String(c?.issuer?.friendly_name ?? /O=([^,]+)/.exec(String(c?.issuer?.name ?? ""))?.[1] ?? "").replace(/[\u0000-\u001F\u007F]/g, "").trim().slice(0, 60);
+      best = { nb, na, issuer: raw || "an unknown issuer" };
+    }
+  }
+  if (!best) return null;
+  return {
+    issuer: best.issuer,
+    notBefore: new Date(best.nb).toISOString(),
+    notAfter: new Date(best.na).toISOString(),
+    daysLeft: Math.floor((best.na - now) / 86_400_000),
+  };
+}
+
+/* ---------------- admin ---------------- */
+
+/** Constant-time comparison of two byte arrays. */
+export function timingSafeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
+/** Parse ?limit=&offset= safely. */
+export function pageParams(sp: URLSearchParams): { limit: number; offset: number } {
+  const n = (v: string | null, d: number, max: number) => {
+    const x = Number(v);
+    return v !== null && Number.isInteger(x) && x >= 0 ? Math.min(x, max) : d;
+  };
+  return { limit: Math.max(1, n(sp.get("limit"), 100, 200)), offset: n(sp.get("offset"), 0, 1_000_000) };
+}

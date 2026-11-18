@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>SafeLink admin</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<style>
+  :root{--ink:#12294A;--soft:#33455f;--canvas:#eef2f7;--surface:#fff;--line:#dbe3ec;--muted:#64717f;--accent:#1795ad;--accent-dark:#127e93;--danger:#d83a3a;--tint:#e4f4f7}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--canvas);color:var(--ink);line-height:1.5}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px}
+  h1{font-size:1.4rem;margin:0 0 4px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+  input,select,button{font:inherit}
+  input[type=password],input[type=text]{border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;min-width:240px}
+  button{border:0;border-radius:10px;padding:9px 14px;cursor:pointer;background:var(--accent);color:#fff;font-weight:600}
+  button:hover{background:var(--accent-dark)}
+  button.ghost{background:var(--surface);color:var(--accent-dark);border:1.5px solid var(--line)}
+  button.del{background:var(--surface);color:var(--danger);border:1.5px solid #f0c4c4;padding:4px 10px;font-size:.85rem}
+  button.del:hover{background:#fbe8e8}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  table{border-collapse:collapse;width:100%;font-size:.88rem}
+  th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  td.note{max-width:340px;white-space:pre-wrap;overflow-wrap:anywhere}
+  td.url{max-width:300px;overflow-wrap:anywhere}
+  .muted{color:var(--muted);font-size:.85rem}
+  .err{color:var(--danger);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--tint);border-radius:999px;padding:4px 10px;font-size:.85rem;cursor:pointer;border:0;color:var(--ink);font-weight:500}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SafeLink admin</h1>
+  <p class="muted">Community scam reports. Reports are never shown to the public; only counts appear on checks.</p>
+
+  <div class="card" id="login">
+    <label for="token"><strong>Admin token</strong></label>
+    <div class="row">
+      <input type="password" id="token" autocomplete="off" placeholder="paste your ADMIN_TOKEN">
+      <button id="go" type="button">Sign in</button>
+    </div>
+    <p class="muted">Kept in this tab only (sessionStorage) and sent as a Bearer header. It is cleared when you close the tab or sign out.</p>
+    <p class="err" id="loginErr"></p>
+  </div>
+
+  <div id="app" hidden>
+    <div class="card">
+      <div class="row">
+        <input type="text" id="q" placeholder="Filter by site name…">
+        <button id="search" type="button">Search</button>
+        <button id="reload" type="button" class="ghost">Reload</button>
+        <button id="logout" type="button" class="ghost">Sign out</button>
+        <span class="muted" id="total"></span>
+      </div>
+      <p class="muted" style="margin:12px 0 6px">Most reported sites (distinct reporters):</p>
+      <div class="chips" id="top"></div>
+    </div>
+    <div class="card" style="overflow:auto">
+      <table>
+        <thead><tr><th>#</th><th>When (UTC)</th><th>Site</th><th>Link</th><th>Type</th><th>Lang</th><th>Note</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="row" style="margin-top:12px">
+        <button id="prev" type="button" class="ghost">← Newer</button>
+        <button id="next" type="button" class="ghost">Older →</button>
+        <span class="muted" id="page"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY="sl_admin_token", PAGE=50, offset=0, filter="";
+  var $=function(id){return document.getElementById(id);};
+  function token(){try{return sessionStorage.getItem(KEY)||"";}catch(e){return "";}}
+  function api(path,opts){
+    opts=opts||{}; opts.headers={"Authorization":"Bearer "+token()};
+    return fetch("/api/admin"+path,opts).then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});});
+  }
+  function show(ok){ $("login").hidden=ok; $("app").hidden=!ok; }
+  function td(text,cls){var c=document.createElement("td");if(cls)c.className=cls;c.textContent=text==null?"":String(text);return c;}
+
+  function load(){
+    api("/reports?limit="+PAGE+"&offset="+offset+(filter?"&host="+encodeURIComponent(filter):"")).then(function(r){
+      if(r.status===401){ try{sessionStorage.removeItem(KEY);}catch(e){} show(false); $("loginErr").textContent="Wrong token."; return; }
+      if(r.status===503){ show(false); $("loginErr").textContent="Admin is not enabled on the server (set the ADMIN_TOKEN secret, 16+ characters)."; return; }
+      if(r.status===429){ show(false); $("loginErr").textContent="Too many attempts. Wait a minute."; return; }
+      if(r.status!==200){ show(false); $("loginErr").textContent="Error "+r.status; return; }
+      show(true); $("loginErr").textContent="";
+      var j=r.json; $("total").textContent=j.total+" report"+(j.total===1?"":"s");
+      var top=$("top"); top.textContent="";
+      (j.topHosts||[]).forEach(function(t){
+        var b=document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=t.host+" · "+t.n;
+        b.addEventListener("click",function(){ $("q").value=t.host; filter=t.host; offset=0; load(); });
+        top.appendChild(b);
+      });
+      var tb=$("rows"); tb.textContent="";
+      j.items.forEach(function(it){
+        var tr=document.createElement("tr");
+        tr.appendChild(td(it.id));
+        tr.appendChild(td(new Date(it.created_at*1000).toISOString().replace("T"," ").slice(0,16)));
+        tr.appendChild(td(it.host));
+        tr.appendChild(td(it.url,"url"));
+        tr.appendChild(td(it.category));
+        tr.appendChild(td(it.lang));
+        tr.appendChild(td(it.note,"note"));
+        var act=document.createElement("td");
+        var d1=document.createElement("button"); d1.type="button"; d1.className="del"; d1.textContent="Delete";
+        d1.addEventListener("click",function(){ if(confirm("Delete report #"+it.id+"?")) api("/reports/"+it.id,{method:"DELETE"}).then(load); });
+        var d2=document.createElement("button"); d2.type="button"; d2.className="del"; d2.textContent="Delete all for site"; d2.style.marginLeft="6px";
+        d2.addEventListener("click",function(){ if(confirm("Delete ALL reports for "+it.host+"?")) api("/hosts/"+encodeURIComponent(it.host),{method:"DELETE"}).then(load); });
+        act.appendChild(d1); act.appendChild(d2); tr.appendChild(act);
+        tb.appendChild(tr);
+      });
+      $("prev").disabled=offset===0; $("next").disabled=offset+PAGE>=j.total;
+      $("page").textContent=j.total? ("Showing "+(offset+1)+"–"+Math.min(offset+PAGE,j.total)):"No reports";
+    }).catch(function(){ $("loginErr").textContent="Network error."; });
+  }
+
+  $("go").addEventListener("click",function(){
+    var t=$("token").value.trim(); if(!t) return;
+    try{sessionStorage.setItem(KEY,t);}catch(e){}
+    $("token").value=""; offset=0; filter=""; load();
+  });
+  $("token").addEventListener("keydown",function(e){if(e.key==="Enter")$("go").click();});
+  $("search").addEventListener("click",function(){ filter=$("q").value.trim().toLowerCase(); offset=0; load(); });
+  $("q").addEventListener("keydown",function(e){if(e.key==="Enter")$("search").click();});
+  $("reload").addEventListener("click",load);
+  $("logout").addEventListener("click",function(){ try{sessionStorage.removeItem(KEY);}catch(e){} show(false); });
+  $("prev").addEventListener("click",function(){ offset=Math.max(0,offset-PAGE); load(); });
+  $("next").addEventListener("click",function(){ offset+=PAGE; load(); });
+
+  if(token()) load();
+})();
+</script>
+</body>
+</html>

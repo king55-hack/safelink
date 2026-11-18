@@ -12,7 +12,8 @@
   // Per-IP rate limit for /api/check (10 checks per minute). Counted per Cloudflare location.
   "ratelimits": [
     { "name": "CHECK_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
-    { "name": "REPORT_LIMITER", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } }
+    { "name": "REPORT_LIMITER", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } },
+    { "name": "ADMIN_LIMITER", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } }
   ],
   // Custom domain (DNS + certificate are created automatically; the zone must be in this Cloudflare account)
   "routes": [{ "pattern": "safelink.rajanrimal.com.np", "custom_domain": true }],

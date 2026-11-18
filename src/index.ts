@@ -1,4 +1,5 @@
-import { blockedReason, parseInput, parseRdap, parseVtStats, registrableDomain, sanitizeReport, vtUrlId, type RdapInfo, type VtStats } from "./lib.ts";
+import { connect } from "cloudflare:sockets";
+import { blockedReason, parseInput, parseRdap, pageParams, parseVtStats, registrableDomain, sanitizeReport, summarizeCerts, timingSafeEqualBytes, vtUrlId, type CertSummary, type RdapInfo, type VtStats } from "./lib.ts";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -10,6 +11,10 @@ export interface Env {
   CHECK_LIMITER?: RateLimit;
   /** Per-IP limiter for /api/report */
   REPORT_LIMITER?: RateLimit;
+  /** Per-IP limiter for /api/admin/* */
+  ADMIN_LIMITER?: RateLimit;
+  /** Secret token that unlocks /admin (>= 16 chars; wrangler secret put ADMIN_TOKEN) */
+  ADMIN_TOKEN?: string;
   /** D1 database holding community reports */
   DB?: D1Database;
   /** Optional Cloudflare Turnstile secret (wrangler secret put TURNSTILE_SECRET) */
@@ -30,7 +35,7 @@ const json = (data: unknown, status = 200) =>
   });
 
 /** Follow redirects manually so every hop is re-validated (SSRF) and recorded. */
-async function followRedirects(start: URL): Promise<{ chain: Hop[]; error?: string; tooMany?: boolean }> {
+async function followRedirects(start: URL): Promise<{ chain: Hop[]; error?: string; tooMany?: boolean; failed?: URL }> {
   const chain: Hop[] = [];
   const seen = new Set<string>();
   let cur = start;
@@ -44,7 +49,7 @@ async function followRedirects(start: URL): Promise<{ chain: Hop[]; error?: stri
     try {
       res = await fetch(cur.href, { method: "GET", redirect: "manual", headers: { "user-agent": UA }, signal: AbortSignal.timeout(5000) });
     } catch {
-      return { chain, error: "could not reach the site" };
+      return { chain, error: "could not reach the site", failed: cur };
     }
     res.body?.cancel().catch(() => {}); // never download the page body
     chain.push({ url: cur.href, status: res.status });
@@ -129,6 +134,56 @@ async function virusTotal(finalUrl: string, host: string, key: string | undefine
     stats = r?.status === 200 ? parseVtStats(r.json) : null;
   }
   return stats ? { checked: true, ...stats } : { checked: false };
+}
+
+/** Open a TCP (optionally TLS) connection to host:443. true = the connection was established. */
+async function tryConnect(host: string, secure: boolean): Promise<boolean> {
+  try {
+    const sock = connect({ hostname: host, port: 443 }, { secureTransport: secure ? "on" : "off", allowHalfOpen: false });
+    await Promise.race([sock.opened, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 4000))]);
+    sock.close().catch(() => {});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * true = the server answers on 443 but its TLS certificate was rejected (expired, self-signed, wrong site...).
+ * Only called when the HTTPS request already failed, to tell "bad certificate" from "site is down".
+ * (Workers cannot open raw sockets to Cloudflare-proxied sites, so those are reported as "unknown", never as a problem.)
+ */
+async function tlsProblem(host: string): Promise<boolean> {
+  const [tlsOk, tcpOk] = await Promise.all([tryConnect(host, true), tryConnect(host, false)]);
+  return !tlsOk && tcpOk;
+}
+
+/** One CertSpotter lookup, cached 6 hours. null = error / rate limit (never cached). */
+async function ctList(domain: string): Promise<unknown[] | null> {
+  const cache = caches.default;
+  const cacheKey = new Request("https://ct-cache.safelink.invalid/" + encodeURIComponent(domain));
+  const hit = await cache.match(cacheKey);
+  if (hit) return (await hit.json()) as unknown[];
+  try {
+    const res = await fetch("https://api.certspotter.com/v1/issuances?domain=" + encodeURIComponent(domain) + "&match_wildcard=true&expand=issuer", {
+      headers: { accept: "application/json", "user-agent": UA }, signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return null;
+    const list = (await res.json()) as unknown[];
+    await cache.put(cacheKey, new Response(JSON.stringify(list), { headers: { "content-type": "application/json", "cache-control": "max-age=21600" } }));
+    return list;
+  } catch {
+    return null;
+  }
+}
+
+/** Newest valid certificate for a host from public Certificate Transparency logs (CertSpotter). */
+async function certInfo(host: string): Promise<CertSummary | null> {
+  const first = await ctList(host);
+  const s = summarizeCerts(first);
+  if (s || first === null) return s;
+  const apex = registrableDomain(host); // wildcard certificates (*.example.com) are listed under the apex domain
+  return apex !== host ? summarizeCerts(await ctList(apex)) : null;
 }
 
 /** How many different people reported these hosts (each reporter counts once per site). */
@@ -232,11 +287,16 @@ async function handleCheck(request: Request, env: Env): Promise<Response> {
   const blocked = !!blockedReason(start);
 
   // independent lookups run in parallel; we judge the domain the link really lands on
-  const [age, sb, reported, vt] = await Promise.all([
+  const lastHop = redirects.chain.at(-1);
+  const tlsVerified = !!lastHop && lastHop.url.startsWith("https:"); // the Worker completed an HTTPS request, so the certificate was valid and trusted
+  const failed = redirects.error === "could not reach the site" ? redirects.failed : undefined;
+  const [age, sb, reported, vt, cert, badTls] = await Promise.all([
     blocked ? Promise.resolve(null) : domainAge(finalHost),
     blocked ? Promise.resolve({ checked: false, threats: [] as string[] }) : safeBrowsing([...new Set([start.href, finalUrl])], env.SAFE_BROWSING_KEY),
     reportCount(env, [...new Set([start.hostname.toLowerCase(), finalHost.toLowerCase()])]),
     blocked ? Promise.resolve({ checked: false as const }) : virusTotal(finalUrl, finalHost, env.VIRUSTOTAL_KEY),
+    tlsVerified ? certInfo(finalHost) : Promise.resolve(null),
+    failed && failed.protocol === "https:" && !blockedReason(failed) ? tlsProblem(failed.hostname) : Promise.resolve(false),
   ]);
 
   return json({
@@ -250,7 +310,60 @@ async function handleCheck(request: Request, env: Env): Promise<Response> {
     safeBrowsing: sb,
     reports: { count: reported },
     virusTotal: vt,
+    tls: { verified: tlsVerified, problem: badTls },
+    cert,
   });
+}
+
+/* ---------------- admin API (token protected) ---------------- */
+
+async function sha256Bytes(s: string): Promise<Uint8Array> {
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+}
+const adminJson = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex, nofollow", "x-content-type-options": "nosniff" } });
+
+async function handleAdmin(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 16 || !env.DB) return adminJson({ error: "admin disabled" }, 503);
+  if (env.ADMIN_LIMITER) {
+    const { success } = await env.ADMIN_LIMITER.limit({ key: request.headers.get("cf-connecting-ip") ?? "unknown" });
+    if (!success) return adminJson({ error: "rate limited" }, 429);
+  }
+  const m = /^Bearer (.{1,256})$/.exec(request.headers.get("authorization") ?? "");
+  if (!m) return adminJson({ error: "unauthorized" }, 401);
+  const [given, real] = await Promise.all([sha256Bytes(m[1]), sha256Bytes(env.ADMIN_TOKEN)]);
+  if (!timingSafeEqualBytes(given, real)) return adminJson({ error: "unauthorized" }, 401);
+
+  const path = url.pathname.replace(/^\/api\/admin/, "");
+  try {
+    if (request.method === "GET" && path === "/reports") {
+      const { limit, offset } = pageParams(url.searchParams);
+      const host = (url.searchParams.get("host") ?? "").toLowerCase().slice(0, 253);
+      const like = "%" + host.replace(/[\\%_]/g, (c) => "\\" + c) + "%";
+      const where = host ? "WHERE host LIKE ? ESCAPE '\\'" : "";
+      const list = env.DB.prepare("SELECT id, host, url, category, note, lang, created_at FROM reports " + where + " ORDER BY id DESC LIMIT ? OFFSET ?");
+      const count = env.DB.prepare("SELECT COUNT(*) AS n FROM reports " + where);
+      const [items, total, top] = await Promise.all([
+        (host ? list.bind(like, limit, offset) : list.bind(limit, offset)).all(),
+        (host ? count.bind(like) : count).first<{ n: number }>(),
+        env.DB.prepare("SELECT host, COUNT(DISTINCT reporter) AS n FROM reports GROUP BY host ORDER BY n DESC, host LIMIT 10").all(),
+      ]);
+      return adminJson({ total: total?.n ?? 0, items: items.results, topHosts: top.results });
+    }
+    let mm = /^\/reports\/(\d{1,12})$/.exec(path);
+    if (request.method === "DELETE" && mm) {
+      const r = await env.DB.prepare("DELETE FROM reports WHERE id = ?").bind(Number(mm[1])).run();
+      return adminJson({ ok: true, deleted: r.meta?.changes ?? 0 });
+    }
+    mm = /^\/hosts\/([^/]{1,253})$/.exec(path);
+    if (request.method === "DELETE" && mm) {
+      const r = await env.DB.prepare("DELETE FROM reports WHERE host = ?").bind(decodeURIComponent(mm[1]).toLowerCase()).run();
+      return adminJson({ ok: true, deleted: r.meta?.changes ?? 0 });
+    }
+    return adminJson({ error: "not found" }, 404);
+  } catch {
+    return adminJson({ error: "database error" }, 500);
+  }
 }
 
 export default {
@@ -258,6 +371,7 @@ export default {
     const { pathname } = new URL(request.url);
     if (pathname === "/api/check") return handleCheck(request, env);
     if (pathname === "/api/report") return handleReport(request, env);
+    if (pathname.startsWith("/api/admin/")) return handleAdmin(request, env, new URL(request.url));
     if (pathname.startsWith("/api/")) return json({ error: "not found" }, 404);
     return env.ASSETS.fetch(request);
   },
