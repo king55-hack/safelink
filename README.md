@@ -45,6 +45,12 @@ npx wrangler secret put TURNSTILE_SECRET    # optional: Turnstile secret (and se
 npm run deploy
 ```
 
+## Security certificate
+
+For HTTPS destinations the Worker shows the newest valid certificate (issuer and expiry) from public Certificate Transparency logs via CertSpotter (cached 6 hours). If the HTTPS request fails, it probes port 443 with and without TLS: a server that answers plain TCP but rejects TLS is reported as a "certificate problem" (expired, self-signed, wrong site...).
+
+Limits, on purpose: Workers cannot open raw sockets to Cloudflare-proxied sites and the free CertSpotter API only lists current certificates, so this check only ever *adds* a warning or a detail; it never claims a site is safe.
+
 ## VirusTotal
 
 With `VIRUSTOTAL_KEY` set, the Worker asks VirusTotal what its security engines say about the link's final URL (and the domain if the URL is unknown). 3+ engines flagging it = dangerous; 1–2 = "be careful" (it can be a false alarm). Answers are cached for an hour because the free API allows only ~4 requests/minute, and quota errors are skipped silently. The free VirusTotal API is for non-commercial use only.
@@ -56,7 +62,18 @@ With `VIRUSTOTAL_KEY` set, the Worker asks VirusTotal what its security engines 
 - Only the link **without** query string / fragment / credentials, the category and an optional note are saved. IP addresses are never stored; a one-way salted hash (IP + month) makes one person count once per site.
 - Spam protection: per-IP rate limit (5/min), hidden honeypot field and an optional Cloudflare Turnstile check.
 - Checked links show "Reported by other users" when different people reported the same site (info for 1–2 reports, warning for 3+). It never makes a site "dangerous" by itself, so false reports cannot blacklist a legitimate site.
-- Reports are not displayed anywhere publicly. Read them with `npx wrangler d1 execute DB --remote --command "SELECT * FROM reports ORDER BY id DESC LIMIT 50"`.
+- Reports are not displayed anywhere publicly. Review them at `/admin/` (see below) or with `npx wrangler d1 execute DB --remote --command "SELECT * FROM reports ORDER BY id DESC LIMIT 50"`.
+
+### Admin page
+
+`/admin/` lists, filters and deletes reports. It is protected by a secret token (`wrangler secret put ADMIN_TOKEN`, at least 16 random characters); without the secret the admin API answers 503. The token is sent as a Bearer header (kept in `sessionStorage` only), compared in constant time, and attempts are rate limited. For stronger protection put Cloudflare Access in front of `/admin/*` and `/api/admin/*`.
+
+## Phone, sharing and history
+
+- **Share to SafeLink:** installed as an app (Android Chrome/Edge), SafeLink appears in the phone's Share menu, so a suspicious link in SMS/WhatsApp can be sent straight to it (`share_target` in `manifest.webmanifest`). iOS does not support this for web apps; use the in-page paste instead.
+- **Paste a whole message:** links are extracted from the text; if there are several you pick which to check.
+- **Recent checks:** the last 20 checks (site + path only) are kept in the browser's `localStorage`, never sent anywhere. "Clear history" / "Stop saving" are on the page.
+- `public/privacy.html` is the Privacy & About page (English, Japanese, Nepali); update it whenever the data flow changes.
 
 `/api/check` is rate limited per IP (see `ratelimits` in `wrangler.jsonc`). Never commit API keys; use `wrangler secret` (or `.dev.vars` locally, which is git-ignored).
 
@@ -72,3 +89,7 @@ With `VIRUSTOTAL_KEY` set, the Worker asks VirusTotal what its security engines 
 ## Notes
 
 SafeLink reads warning signs; no tool can guarantee a link is safe. The Google Safe Browsing API is free for non-commercial use only.
+
+## License
+
+[MIT](LICENSE). Bundled third-party code: [jsQR](https://github.com/cozmo/jsQR) (Apache-2.0) in `public/vendor/`.
