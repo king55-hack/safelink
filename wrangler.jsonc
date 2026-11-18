@@ -16,9 +16,9 @@
   ],
   // Custom domain (DNS + certificate are created automatically; the zone must be in this Cloudflare account)
   "routes": [{ "pattern": "safelink.rajanrimal.com.np", "custom_domain": true }],
-  // Community scam reports (D1). The id below is a local placeholder: replace it with the id from `npx wrangler d1 create safelink-reports`.
+  // Community scam reports (D1). Create your own with `npx wrangler d1 create safelink-reports` and put its id here.
   "d1_databases": [
-    { "binding": "DB", "database_name": "safelink-reports", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "safelink-reports", "database_id": "58ef6454-dc38-4895-9f58-f8c4c8c1f91a", "migrations_dir": "migrations" }
   ],
   "observability": { "enabled": true }
   // Optional secret (never commit it):  npx wrangler secret put SAFE_BROWSING_KEY
