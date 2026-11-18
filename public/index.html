@@ -4,6 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="favicon.png">
+<meta name="description" content="Paste a link or scan a QR code. SafeLink checks look-alike names, redirects, domain age, security certificates and scam databases, and explains the result in plain words. Free. English, 日本語, नेपाली.">
+<link rel="canonical" href="https://safelink.rajanrimal.com.np/">
+<meta name="theme-color" content="#12294A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SafeLink">
+<meta property="og:title" content="SafeLink — Check if a link is safe before you click">
+<meta property="og:description" content="Paste a link or scan a QR code and get a plain-words safety check. Free, in English, 日本語 and नेपाली.">
+<meta property="og:url" content="https://safelink.rajanrimal.com.np/">
+<meta property="og:image" content="https://safelink.rajanrimal.com.np/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SafeLink — Trusted web checker">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SafeLink — Check if a link is safe before you click">
+<meta name="twitter:description" content="Paste a link or scan a QR code and get a plain-words safety check.">
+<meta name="twitter:image" content="https://safelink.rajanrimal.com.np/og.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SafeLink","url":"https://safelink.rajanrimal.com.np/","applicationCategory":"SecurityApplication","operatingSystem":"Any","description":"Check if a link or QR code is safe before you click.","inLanguage":["en","ja","ne"],"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <title>SafeLink — Check if a link is safe before you click</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -181,6 +200,27 @@
   .rp-open-row{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
   .foot-report{margin-top:12px}
 
+  .linksbox{margin-top:14px;border:1px dashed var(--line);border-radius:12px;padding:12px 14px;background:#fbfcfe}
+  .linksbox[hidden],.histbox[hidden]{display:none}
+  .links-title{margin:0 0 8px;font-weight:600;font-size:.92rem}
+  .links-list,.hist-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .links-list li{display:flex;align-items:center;gap:10px}
+  .links-url{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}
+  .hdot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:var(--muted)}
+  .hdot.safe{background:var(--safe)}.hdot.warn{background:var(--warn)}.hdot.danger{background:var(--danger)}
+  .histbox{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow)}
+  .hist-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:8px}
+  .hist-head h2{font-family:var(--disp);font-size:1.05rem;margin:0}
+  .hist-note{font-size:.8rem;color:var(--muted)}
+  .hist-item{display:flex;align-items:center;gap:10px;width:100%;text-align:start;background:none;border:0;padding:7px 4px;font:inherit;font-size:.9rem;color:var(--ink);cursor:pointer;border-radius:8px}
+  .hist-item:hover{background:var(--accent-tint)}
+  .hist-item .hist-url{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hist-actions{display:flex;gap:16px;margin-top:8px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .foot-links{margin-top:12px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap;align-items:center}
+  .foot-links a{color:var(--accent-dark);font-weight:600;font-size:.9rem;text-decoration:none}
+  .foot-links a:hover{text-decoration:underline}
+
   .deep{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:.88rem;color:var(--muted)}
   .deep .spin{border-color:rgba(18,41,74,.2);border-top-color:var(--accent);margin:0}
 
@@ -202,7 +242,7 @@
 <body>
 <header>
   <div class="wrap bar">
-    <div class="brand"><img src="logo.webp" alt="SafeLink — Trusted web checker" width="635" height="190"></div>
+    <div class="brand"><img src="logo.webp" alt="SafeLink — Trusted web checker" width="635" height="216"></div>
     <div class="lang">
       <button class="lang-btn" id="langBtn" aria-haspopup="true" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" stroke-linecap="round"/></svg>
@@ -253,6 +293,10 @@
         <button class="chip" data-url="https://en.wikipedia.org/wiki/Phishing" data-i18n>Safe site</button>
       </div>
       <div class="hint" id="hint" data-i18n></div>
+      <div class="linksbox" id="linksBox" hidden>
+        <p class="links-title" id="linksTitle" data-i18n>We found several links in your text. Choose one to check:</p>
+        <ul class="links-list" id="linksList"></ul>
+      </div>
     </div>
   </section>
 
@@ -285,14 +329,22 @@
       <div class="rp-msg" id="rpMsg" role="status" data-i18n></div>
     </form>
   </section>
+<section id="histBox" class="histbox" hidden aria-labelledby="histTitle">
+    <div class="hist-head"><h2 id="histTitle" data-i18n>Recent checks</h2><span class="hist-note" data-i18n>Saved only on this device.</span></div>
+    <ul class="hist-list" id="histList"></ul>
+    <div class="hist-actions">
+      <button class="linkbtn" id="histClear" type="button" data-i18n>Clear history</button>
+      <button class="linkbtn" id="histToggle" type="button" data-i18n>Stop saving</button>
+    </div>
+  </section>
 </main>
 
 <footer class="wrap">
   <div class="notes">
-    <b data-i18n>Your privacy:</b> <span data-i18n>SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks Google Safe Browsing and VirusTotal about it. We don't store it.</span>
+    <b data-i18n>Your privacy:</b> <span data-i18n>SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't keep a record of it. See Privacy & About for details.</span>
     <br><b data-i18n>Good to know:</b> <span data-i18n>SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.</span>
   </div>
-  <div class="foot-report"><button class="linkbtn" type="button" id="footReport" data-i18n>Report a scam</button></div>
+  <div class="foot-links"><button class="linkbtn" type="button" id="footReport" data-i18n>Report a scam</button><a href="privacy.html" data-i18n>Privacy &amp; About</a></div>
   <div class="foot-mark">SafeLink <span data-i18n>— Cybersecurity for everyone, not just experts.</span></div>
 </footer>
 
@@ -512,6 +564,33 @@ function finalize(F,score,host,url){
   return {verdict,score,raw,findings:F,host,url};
 }
 
+/* ---------- find links inside a pasted message ---------- */
+const LINK_TLDS="com|net|org|info|biz|io|co|me|ly|gl|to|cc|ws|tv|app|dev|xyz|top|click|link|online|site|shop|store|live|vip|icu|buzz|work|tk|ml|ga|cf|gq|ru|cn|jp|np|in|uk|de|fr|us|ca|au|kr|sg|hk|tw|id|vn|th|ph|my|bd|pk|lk|br|mx|tr|es|it|nl|pl|ua|za|ng|ke|asia|club|space|website|tech|cloud|zip|mov|cam|rest|fit|loan|men|win|bid|date|stream|review|download|racing|party|science|country|kim|faith|cricket|gdn";
+const LINK_CHARS="[\\w\\-.~:/?#@!$&*+,;=%\\[\\]()\\u00C0-\\u024F\\u0370-\\u03FF\\u0400-\\u04FF]";
+function extractLinks(text){
+  const out=[], seen=new Set();
+  const add=raw=>{
+    let s=raw;                                        // trim punctuation that belongs to the sentence, not the link
+    for(;;){
+      const c=s.slice(-1);
+      if(c&&".,;:!?]}>".includes(c)) s=s.slice(0,-1);
+      else if(c===")"&&(s.match(/\(/g)||[]).length<(s.match(/\)/g)||[]).length) s=s.slice(0,-1);   // keep the ")" of alert(1) or /wiki/Foo_(bar)
+      else break;
+    }
+    if(s.length<4) return;
+    const k=s.toLowerCase(); if(seen.has(k)||out.length>=20) return;
+    seen.add(k); out.push(s);
+  };
+  let rest=String(text||"").slice(0,5000);
+  // 1) links with a scheme, "www." links, and dangerous pseudo-links such as javascript:
+  const re1=new RegExp("(?:(?:https?|ftp)://|www\\.|(?:javascript|vbscript|data):)"+LINK_CHARS+"+","gi");
+  rest=rest.replace(re1,m=>{add(m);return " ";});
+  // 2) bare domains (paypal.com/login) – only for well-known endings, and never e-mail addresses
+  const re2=new RegExp("(^|[^\\w@./-])((?:[a-z0-9-]+\\.)+(?:"+LINK_TLDS+")(?![a-z0-9-])(?::\\d+)?(?:[/?#]"+LINK_CHARS+"*)?)","gi");
+  rest.replace(re2,(m,pre,link)=>{add(link);return m;});
+  return out;
+}
+
 /* ---------- rendering ---------- */
 const ICONS={
   safe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -566,6 +645,7 @@ function render(r,keepHint){
 
   box.innerHTML=html;
   box.classList.add("show");
+  histRecord(r);
   requestAnimationFrame(()=>{const mf=document.getElementById("mf");if(mf)mf.style.width=pct+"%";});
   reapplyLang();
   box.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"});
@@ -577,6 +657,13 @@ function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","
 function runCheck(){
   const v=document.getElementById("url").value;
   if(!v.trim()){setHint("Please paste a link first.");reapplyLang();return;}
+  hideLinks();
+  if(/\s/.test(v.trim())){                     // a whole message was pasted: find the links in it
+    const links=extractLinks(v);
+    if(links.length===0){ setHint("We couldn't find a web link in that text."); reapplyLang(); return; }
+    if(links.length>1){ setHint(""); showLinks(links); return; }
+    document.getElementById("url").value=links[0]; runCheck(); return;
+  }
   const my=++checkSeq;
   const r=analyze(v);
   // the deeper server-side check only runs when served over http(s) (not from a local file) and the link is a web link
@@ -618,6 +705,14 @@ async function enrich(r,input,my){
   if(s.reports&&s.reports.count>0){
     const n=s.reports.count;
     add(n>=3?"warn":"info","Reported by other users",n+" "+(n===1?"person has":"people have")+" reported this site as suspicious on SafeLink.",n>=3?20:0);
+  }
+
+  if(s.tls&&s.tls.problem){
+    add("warn","Security certificate problem","This site's secure (HTTPS) connection could not be set up safely. Its certificate may be expired, self-signed or issued for a different website, so don't enter any information.",30);
+  } else if(s.cert&&!F.some(f=>f.sev==="danger")){
+    const c=s.cert, until=String(c.notAfter).slice(0,10);
+    add("good","Valid security certificate","Issued by "+c.issuer+" and valid until "+until+". A valid certificate only means the connection is encrypted, not that the site is trustworthy.",0);
+    if(c.daysLeft<=7) add("info","Security certificate expires soon","This site's certificate expires on "+until+".",0);
   }
 
   if(s.domain&&typeof s.domain.ageDays==="number"){
@@ -690,7 +785,7 @@ const NE_BUILTIN = {
  "Sneaky lookalike": "चलाख नक्कली",
  "Safe site": "सुरक्षित साइट",
  "Your privacy:": "तपाईंको गोपनीयता:",
- "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks Google Safe Browsing and VirusTotal about it. We don't store it.": "SafeLink ले लिङ्कको ठेगाना र बनोट तपाईंकै ब्राउजरभित्र जाँच्छ। थप गहिरो जाँचका लागि लिङ्क मात्र हाम्रो सुरक्षित सर्भरमा पठाइन्छ, जसले Google Safe Browsing र VirusTotal लाई पनि सोध्छ। हामी यसलाई सुरक्षित गरेर राख्दैनौं।",
+ "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't keep a record of it. See Privacy & About for details.": "SafeLink ले लिङ्कको ठेगाना र बनोट तपाईंकै ब्राउजरभित्र जाँच्छ। थप गहिरो जाँचका लागि लिङ्क मात्र हाम्रो सुरक्षित सर्भरमा पठाइन्छ, जसले अन्य सुरक्षा सेवाहरू (जस्तै Google Safe Browsing र VirusTotal) लाई पनि सोध्छ। हामी यसको कुनै अभिलेख राख्दैनौं। विवरणका लागि “गोपनीयता र बारेमा” हेर्नुहोस्।",
  "Good to know:": "जान्न राम्रो:",
  "SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.": "SafeLink ले पहिले लिङ्कमै लेखिएका खतराका सङ्केतहरू पढ्छ, त्यसपछि (अनलाइन हुँदा) सुरक्षित ब्याकएन्डमार्फत रिडाइरेक्टहरू पछ्याउँछ र डोमेनको उमेर जाँच्छ। कुनै पनि उपकरणले लिङ्क सुरक्षित छ भनी ग्यारेन्टी दिन सक्दैन।",
  "— Cybersecurity for everyone, not just experts.": "— साइबर सुरक्षा सबैका लागि, विशेषज्ञका लागि मात्र होइन।",
@@ -775,6 +870,33 @@ const NE_BUILTIN = {
  "Reported by other users": "अन्य प्रयोगकर्ताले रिपोर्ट गरेको",
  "Flagged as dangerous by security vendors": "सुरक्षा कम्पनीहरूले खतरनाक भनी चिन्ह लगाएका",
  "Flagged by a few security vendors": "केही सुरक्षा कम्पनीहरूले चेतावनी दिएका",
+ "We couldn't find a web link in that text.": "त्यो पाठमा वेब लिङ्क भेटिएन।",
+ "We found several links in your text. Choose one to check:": "तपाईंको पाठमा धेरै लिङ्क भेटिए। जाँच्न एउटा छान्नुहोस्:",
+ "Check": "जाँच्नुहोस्",
+ "Recent checks": "हालका जाँचहरू",
+ "Saved only on this device.": "यो उपकरणमा मात्र सुरक्षित गरिन्छ।",
+ "Clear history": "इतिहास मेटाउनुहोस्",
+ "Stop saving": "सुरक्षित गर्न बन्द गर्नुहोस्",
+ "Turn on history": "इतिहास सुरु गर्नुहोस्",
+ "Privacy & About": "गोपनीयता र बारेमा",
+ "Security certificate problem": "सुरक्षा प्रमाणपत्रमा समस्या",
+ "This site's secure (HTTPS) connection could not be set up safely. Its certificate may be expired, self-signed or issued for a different website, so don't enter any information.": "यो साइटको सुरक्षित (HTTPS) जडान सुरक्षित रूपमा स्थापना गर्न सकिएन। यसको प्रमाणपत्र म्याद सकिएको, आफैँले हस्ताक्षर गरेको वा फरक वेबसाइटका लागि जारी गरिएको हुन सक्छ, त्यसैले कुनै जानकारी नहाल्नुहोस्।",
+ "Valid security certificate": "मान्य सुरक्षा प्रमाणपत्र",
+ "Security certificate expires soon": "सुरक्षा प्रमाणपत्रको म्याद नजिकै सकिँदैछ",
+ "This link is on a known list of scam, malware or harmful sites. Do not open it.": "यो लिङ्क ठगी, म्यालवेयर वा हानिकारक साइटहरूको ज्ञात सूचीमा छ। यसलाई नखोल्नुहोस्।",
+ "Very recently created website": "हालसालै बनाइएको वेबसाइट",
+ "Long-established website": "लामो समयदेखि सञ्चालित वेबसाइट",
+ "The final destination looks suspicious": "अन्तिम गन्तव्य शङ्कास्पद देखिन्छ",
+ "Short link opened for you": "छोटो लिङ्क तपाईंका लागि खोलियो",
+ "This link bounces through a long chain of redirects, a common way to hide the real destination.": "यो लिङ्क रिडाइरेक्टको लामो शृङ्खलाबाट जान्छ, जुन वास्तविक गन्तव्य लुकाउने सामान्य तरिका हो।",
+ "We couldn't reach this site": "हामी यो साइटमा पुग्न सकेनौं",
+ "It may be offline or already taken down. Scam sites are often short-lived.": "यो अफलाइन वा पहिल्यै हटाइएको हुन सक्छ। ठगी साइटहरू प्रायः अल्पकालीन हुन्छन्।",
+ "Not a normal web link": "सामान्य वेब लिङ्क होइन",
+ "International characters in the address": "ठेगानामा अन्तर्राष्ट्रिय अक्षरहरू",
+ "This address uses non-English letters. That's normal for sites in other languages, but check carefully that it's the site you expected.": "यो ठेगानामा अङ्ग्रेजी बाहेकका अक्षर प्रयोग भएका छन्। अन्य भाषाका साइटका लागि यो सामान्य हो, तर यो तपाईंले सोचेकै साइट हो भनी राम्ररी जाँच्नुहोस्।",
+ "Everyday websites use the standard ports. A custom port is uncommon for normal browsing.": "सामान्य वेबसाइटले मानक पोर्ट प्रयोग गर्छन्। सामान्य ब्राउजिङमा अनुकूलित पोर्ट असामान्य हो।",
+ "That doesn't look like a valid link. Try something like https://example.com": "यो मान्य लिङ्क जस्तो देखिँदैन। https://example.com जस्तै प्रयास गर्नुहोस्।",
+ "Please paste a link first.": "कृपया पहिले लिङ्क टाँस्नुहोस्।",
  "Deeper check paused": "थप जाँच रोकिएको",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "तपाईंले छोटो समयमा धेरै लिङ्क जाँच्नुभयो। थप जाँच फेरि चलाउन कृपया एक मिनेट पर्खनुहोस्।",
  "No warning signs in the address": "ठेगानामा कुनै खतराका सङ्केत छैनन्",
@@ -792,7 +914,7 @@ const JA_BUILTIN = {
  "Sneaky lookalike": "巧妙なそっくりサイト",
  "Safe site": "安全なサイト",
  "Your privacy:": "プライバシーについて：",
- "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks Google Safe Browsing and VirusTotal about it. We don't store it.": "SafeLink はリンクのアドレスと構造をまずブラウザ内で確認します。さらに詳しく調べる場合のみ、リンクそのものを安全なサーバーに送信し、Google セーフブラウジングと VirusTotal にも照会します。当サービスでは保存しません。",
+ "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't keep a record of it. See Privacy & About for details.": "SafeLink はリンクのアドレスと構造をまずブラウザ内で確認します。さらに詳しく調べる場合のみ、リンクそのものを安全なサーバーに送信し、他のセキュリティサービス（Google セーフブラウジングや VirusTotal など）にも照会します。当サービスでは記録を残しません。詳しくは「プライバシーと概要」をご覧ください。",
  "Good to know:": "ご注意：",
  "SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.": "SafeLink はまずリンク自体に書かれた危険のサインを読み取り、その後（オンライン時は）安全なバックエンドでリダイレクトをたどり、ドメインの年齢を確認します。リンクが安全であると保証できるツールはありません。",
  "— Cybersecurity for everyone, not just experts.": "— 専門家だけでなく、すべての人のためのサイバーセキュリティ。",
@@ -882,6 +1004,19 @@ const JA_BUILTIN = {
  "Reported by other users": "他のユーザーから報告があります",
  "Flagged as dangerous by security vendors": "セキュリティベンダーが危険と判定しています",
  "Flagged by a few security vendors": "一部のセキュリティベンダーが警告しています",
+ "We couldn't find a web link in that text.": "そのテキストにはウェブリンクが見つかりませんでした。",
+ "We found several links in your text. Choose one to check:": "テキスト内に複数のリンクが見つかりました。確認するリンクを選んでください：",
+ "Check": "確認",
+ "Recent checks": "最近の確認",
+ "Saved only on this device.": "この端末にのみ保存されます。",
+ "Clear history": "履歴を消去",
+ "Stop saving": "保存を停止",
+ "Turn on history": "履歴をオンにする",
+ "Privacy & About": "プライバシーと概要",
+ "Security certificate problem": "セキュリティ証明書に問題があります",
+ "This site's secure (HTTPS) connection could not be set up safely. Its certificate may be expired, self-signed or issued for a different website, so don't enter any information.": "このサイトの安全な接続（HTTPS）を確立できませんでした。証明書の期限切れ、自己署名、または別のサイト用に発行されている可能性があります。情報は入力しないでください。",
+ "Valid security certificate": "有効なセキュリティ証明書",
+ "Security certificate expires soon": "セキュリティ証明書の期限が近づいています",
  "Deeper check paused": "詳細チェックを一時停止中",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "短時間に多くのリンクを確認しました。詳細チェックを再度行うには、1分ほどお待ちください。",
  "This link bounces through a long chain of redirects, a common way to hide the real destination.": "このリンクは長いリダイレクトの連鎖を経由します。本当の行き先を隠すためによく使われる手口です。",
@@ -899,6 +1034,8 @@ const JA_BUILTIN = {
 /* sentences that contain changing parts (names, numbers): matched by pattern, no network needed */
 const q=t=>t.replace(/\u201d, \u201c/g,"\u300d\u300c");
 const JA_PATTERNS = [
+ [/^Issued by (.+) and valid until (\d{4}-\d{2}-\d{2})\. A valid certificate only means the connection is encrypted, not that the site is trustworthy\.$/, m=>"発行元は "+m[1]+"、有効期限は "+m[2]+" です。有効な証明書は通信が暗号化されていることを示すだけで、サイトが信頼できるという意味ではありません。"],
+ [/^This site's certificate expires on (\d{4}-\d{2}-\d{2})\.$/, m=>"このサイトの証明書は "+m[1]+" に期限切れになります。"],
  [/^(\d+) security vendors on VirusTotal flag this link as malicious or phishing\.$/, m=>"VirusTotal上の"+m[1]+"社のセキュリティベンダーが、このリンクをマルウェアまたはフィッシングとして検出しています。"],
  [/^(\d+) security vendors? on VirusTotal flagged this link\. It may be a false alarm, so be careful\.$/, m=>"VirusTotal上の"+m[1]+"社のセキュリティベンダーがこのリンクを警告しています。誤検知の可能性もありますが、注意してください。"],
  [/^(\d+) (?:person has|people have) reported this site as suspicious on SafeLink\.$/, m=>m[1]+"人がSafeLinkでこのサイトを怪しいと報告しています。"],
@@ -920,7 +1057,33 @@ const JA_PATTERNS = [
  [/^The link ends up at “(.+)”, which shows: (.+)\.$/, m=>"リンクの最終的な行き先は「"+m[1]+"」で、次の問題があります："+(JA_BUILTIN[m[2]]||fromPatterns("ja",m[2])||m[2])+"。"],
  [/^This short link leads to “(.+)”\. Judge the link by that real destination\.$/, m=>"この短縮リンクの行き先は「"+m[1]+"」です。その本当の行き先で判断してください。"],
 ];
-const PATTERNS={ja:JA_PATTERNS};
+
+/* the same sentences with changing parts, in Nepali (no network needed) */
+const NE_PATTERNS = [
+ [/^Looks like “(.+)” but isn't$/, m=>"“"+m[1]+"” जस्तो देखिन्छ, तर होइन"],
+ [/^The address is a near-copy of (.+) \((.+)\)\. Tiny spelling changes or look-alike characters like this are how fake sites trick people\.$/, m=>"यो ठेगाना "+m[1]+" ("+m[2]+") को लगभग नक्कल हो। यस्ता साना हिज्जे परिवर्तन वा मिल्दाजुल्दा अक्षरबाट नक्कली साइटहरूले मानिसलाई छल्छन्।"],
+ [/^Uses the name “(.+)” in the wrong place$/, m=>"“"+m[1]+"” नाम गलत ठाउँमा प्रयोग गरिएको छ"],
+ [/^“(.+?)” appears in the address, but the real owner of this link is “(.+?)” — not (.+?)\. Scammers put trusted names in the front to look official\.$/, m=>"“"+m[1]+"” ठेगानामा देखिन्छ, तर यो लिङ्कको वास्तविक मालिक “"+m[2]+"” हो, "+m[3]+" होइन। ठगहरूले आधिकारिक देखिन भरोसायोग्य नाम अगाडि राख्छन्।"],
+ [/^Uses the name “(.+)” with a suspicious ending$/, m=>"“"+m[1]+"” नाम शङ्कास्पद अन्त्यसँग प्रयोग गरिएको छ"],
+ [/^“(.+)” is a real brand, but “\.(.+)” is not where it normally lives\. Scammers register the same name under cheap endings\.$/, m=>"“"+m[1]+"” वास्तविक ब्रान्ड हो, तर “."+m[2]+"” त्यसको सामान्य ठाउँ होइन। ठगहरूले उही नाम सस्तो अन्त्यमा दर्ता गर्छन्।"],
+ [/^Words like “(.+)” are often used to rush you into signing in on a fake page\.$/, m=>"“"+m[1]+"” जस्ता शब्द नक्कली पृष्ठमा हतारमा साइन इन गराउन प्रायः प्रयोग गरिन्छन्।"],
+ [/^Uncommon web ending \(\.(.+)\)$/, m=>"असामान्य वेब अन्त्य (."+m[1]+")"],
+ [/^The “\.(.+)” ending is cheap and heavily used by scam sites\. It's not automatically bad, but it's worth extra caution\.$/, m=>"“."+m[1]+"” अन्त्य सस्तो छ र ठगी साइटहरूले धेरै प्रयोग गर्छन्। यो आफैँमा खराब होइन, तर थप सावधानी अपनाउन लायक छ।"],
+ [/^Connects on an unusual port \(:(\d+)\)$/, m=>"असामान्य पोर्ट (:"+m[1]+") मा जोडिन्छ"],
+ [/^This link uses “(.+):” instead of http\/https\. It may download a file or open another program, so only continue if you fully trust the sender\.$/, m=>"यो लिङ्कले http/https को सट्टा “"+m[1]+"” प्रयोग गर्छ। यसले फाइल डाउनलोड गर्न वा अर्को कार्यक्रम खोल्न सक्छ, त्यसैले पठाउनेमा पूर्ण भरोसा भए मात्र अगाडि बढ्नुहोस्।"],
+ [/^This site's domain was registered only (\d+) days? ago\. Scammers often use freshly made domains\.$/, m=>"यो साइटको डोमेन "+m[1]+" दिन अघि मात्र दर्ता भएको हो। ठगहरूले प्रायः नयाँ बनाइएका डोमेन प्रयोग गर्छन्।"],
+ [/^This site's domain was registered only (\d+) days ago\. Be extra careful before entering any details\.$/, m=>"यो साइटको डोमेन "+m[1]+" दिन अघि मात्र दर्ता भएको हो। कुनै विवरण हाल्नुअघि विशेष सावधानी अपनाउनुहोस्।"],
+ [/^This domain was registered about (\d+) years? ago\. \(Age alone doesn't prove it's safe\.\)$/, m=>"यो डोमेन करिब "+m[1]+" वर्ष अघि दर्ता भएको हो। (उमेर मात्रैले सुरक्षित भन्ने प्रमाणित हुँदैन।)"],
+ [/^After (\d+) redirects?, this link actually lands on “(.+)”\. Make sure that's where you expect to go\.$/, m=>m[1]+" पटक रिडाइरेक्ट पछि, यो लिङ्क वास्तवमा “"+m[2]+"” मा पुग्छ। त्यही ठाउँमा जान खोजेको हो भनी पक्का गर्नुहोस्।"],
+ [/^The link ends up at “(.+)”, which shows: (.+)\.$/, m=>"लिङ्क अन्त्यमा “"+m[1]+"” मा पुग्छ, जहाँ यो समस्या देखिन्छ: "+(NE_BUILTIN[m[2]]||fromPatterns("ne",m[2])||m[2])+"।"],
+ [/^This short link leads to “(.+)”\. Judge the link by that real destination\.$/, m=>"यो छोटो लिङ्कले “"+m[1]+"” मा पुर्‍याउँछ। त्यही वास्तविक गन्तव्यका आधारमा लिङ्कको मूल्याङ्कन गर्नुहोस्।"],
+ [/^(\d+) security vendors on VirusTotal flag this link as malicious or phishing\.$/, m=>"VirusTotal मा "+m[1]+" सुरक्षा कम्पनीले यो लिङ्कलाई खतरनाक वा फिसिङ भनी चिन्ह लगाएका छन्।"],
+ [/^(\d+) security vendors? on VirusTotal flagged this link\. It may be a false alarm, so be careful\.$/, m=>"VirusTotal मा "+m[1]+" सुरक्षा कम्पनीले यो लिङ्कमा चेतावनी दिएका छन्। यो गलत अलार्म पनि हुन सक्छ, तर सावधान रहनुहोस्।"],
+ [/^(\d+) (?:person has|people have) reported this site as suspicious on SafeLink\.$/, m=>"SafeLink मा "+m[1]+" जनाले यो साइटलाई शङ्कास्पद भनी रिपोर्ट गरेका छन्।"],
+ [/^Issued by (.+) and valid until (\d{4}-\d{2}-\d{2})\. A valid certificate only means the connection is encrypted, not that the site is trustworthy\.$/, m=>"जारीकर्ता "+m[1]+", "+m[2]+" सम्म मान्य। मान्य प्रमाणपत्रले जडान गुप्तीकृत छ भन्ने मात्र जनाउँछ, साइट भरोसायोग्य छ भन्ने होइन।"],
+ [/^This site's certificate expires on (\d{4}-\d{2}-\d{2})\.$/, m=>"यो साइटको प्रमाणपत्रको म्याद "+m[1]+" मा सकिन्छ।"],
+];
+const PATTERNS={ja:JA_PATTERNS,ne:NE_PATTERNS};
 const BUILTIN={ne:NE_BUILTIN,ja:JA_BUILTIN};
 function fromPatterns(code,s){
   for(const [re,fn] of (PATTERNS[code]||[])){const m=s.match(re); if(m) return fn(m);}
@@ -1041,7 +1204,8 @@ async function setLanguage(code,enName){
     nodes.forEach(el=>{const s=el.dataset.en;if(s&&cache[code][s])el.textContent=cache[code][s];});
     phNodes.forEach(el=>{const s=el.dataset.enPh;if(s&&cache[code][s])el.setAttribute("placeholder",cache[code][s]);});
   };
-  if(list.length===0){apply();return;}
+  apply();                              // built-in / cached text appears at once
+  if(list.length===0) return;
 
   if(translating){pendingLang=[code,enName];return;}
   translating=true;
@@ -1214,6 +1378,95 @@ rpForm.addEventListener("submit",async e=>{
 document.getElementById("rpCancel").addEventListener("click",closeReport);
 document.getElementById("footReport").addEventListener("click",()=>openReport(document.getElementById("url").value.trim()));
 document.getElementById("result").addEventListener("click",e=>{ if(e.target.closest("[data-report]")) openReport(document.getElementById("url").value.trim()); });
+
+/* ---------- several links in one message ---------- */
+const linksBox=document.getElementById("linksBox"), linksList=document.getElementById("linksList");
+function hideLinks(){ linksBox.hidden=true; linksList.textContent=""; }
+function showLinks(links){
+  linksList.textContent="";
+  links.forEach(l=>{
+    const r=analyze(l), li=document.createElement("li");
+    const dot=document.createElement("span"); dot.className="hdot "+(r.error?"":r.verdict);
+    const txt=document.createElement("span"); txt.className="links-url"; txt.textContent=l; txt.title=l;
+    const b=document.createElement("button"); b.type="button"; b.className="btn small ghost"; b.setAttribute("data-i18n",""); b.textContent="Check";
+    b.addEventListener("click",()=>{ document.getElementById("url").value=l; runCheck(); });
+    li.append(dot,txt,b); linksList.appendChild(li);
+  });
+  linksBox.hidden=false; reapplyLang();
+}
+/* multi-line pastes: browsers would glue the lines together inside a one-line box, so turn line breaks into spaces */
+document.getElementById("url").addEventListener("paste",e=>{
+  const t=(e.clipboardData&&e.clipboardData.getData("text"))||"";
+  if(!/[\r\n]/.test(t)) return;
+  e.preventDefault();
+  const el=e.target, clean=t.replace(/\s*[\r\n]+\s*/g," ").trim();
+  el.setRangeText(clean,el.selectionStart,el.selectionEnd,"end");
+});
+
+/* ---------- recent checks (stored only in this browser, host + path only) ---------- */
+const HIST_KEY="sl_history", HIST_OFF="sl_history_off";
+const histBox=document.getElementById("histBox"), histList=document.getElementById("histList"), histToggle=document.getElementById("histToggle"), histClear=document.getElementById("histClear");
+function histOff(){try{return localStorage.getItem(HIST_OFF)==="1";}catch(_){return false;}}
+function histLoad(){
+  try{const a=JSON.parse(localStorage.getItem(HIST_KEY)||"[]");return Array.isArray(a)?a.filter(x=>x&&typeof x.u==="string"&&["safe","warn","danger"].includes(x.v)).slice(0,20):[];}
+  catch(_){return [];}
+}
+function histSave(a){try{localStorage.setItem(HIST_KEY,JSON.stringify(a.slice(0,20)));}catch(_){}}
+function histKey(url){
+  try{const u=new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(url)?url:"https://"+url);
+    return /^https?:$/.test(u.protocol)?(u.host+(u.pathname==="/"?"":u.pathname)).slice(0,120):null;}
+  catch(_){return null;}
+}
+function histRecord(r){
+  if(histOff()||!r||r.error) return;
+  const u=histKey(r.url); if(!u) return;
+  const a=histLoad().filter(x=>x.u!==u); a.unshift({u,v:r.verdict,t:Date.now()}); histSave(a); renderHistory();
+}
+function renderHistory(){
+  const off=histOff(), items=off?[]:histLoad();
+  histBox.hidden=!off&&items.length===0;
+  histList.textContent="";
+  items.slice(0,8).forEach(x=>{
+    const li=document.createElement("li"), b=document.createElement("button");
+    b.type="button"; b.className="hist-item";
+    const dot=document.createElement("span"); dot.className="hdot "+x.v;
+    const sr=document.createElement("span"); sr.className="sr"; sr.setAttribute("data-i18n",""); sr.textContent=LABELS[x.v];
+    const t=document.createElement("span"); t.className="hist-url"; t.textContent=x.u; t.title=x.u;
+    b.append(dot,sr,t); b.addEventListener("click",()=>{document.getElementById("url").value=x.u;runCheck();});
+    li.appendChild(b); histList.appendChild(li);
+  });
+  histClear.hidden=off;
+  const label=off?"Turn on history":"Stop saving";
+  histToggle.dataset.en=label; histToggle.textContent=label;
+  reapplyLang();
+}
+histClear.addEventListener("click",()=>{try{localStorage.removeItem(HIST_KEY);}catch(_){} renderHistory();});
+histToggle.addEventListener("click",()=>{
+  try{ if(histOff()) localStorage.removeItem(HIST_OFF); else {localStorage.setItem(HIST_OFF,"1");localStorage.removeItem(HIST_KEY);} }catch(_){}
+  renderHistory();
+});
+
+/* ---------- opened from the phone's "Share" menu (PWA share target) ---------- */
+(function handleShare(){
+  const q=new URLSearchParams(location.search);
+  const raw=[q.get("url"),q.get("text"),q.get("title")].filter(Boolean).join(" ").trim();
+  if(!raw) return;
+  try{window.history.replaceState(null,"",location.pathname);}catch(_){}
+  const links=extractLinks(raw), box=document.getElementById("url");
+  if(links.length===1){ box.value=links[0]; runCheck(); }
+  else if(links.length>1){ box.value=raw.replace(/\s+/g," ").slice(0,300); showLinks(links); }
+  else { box.value=raw.replace(/\s+/g," ").slice(0,300); setHint("We couldn't find a web link in that text."); reapplyLang(); }
+})();
+
+/* offline shell + installable app */
+if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)){
+  window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{});});
+}
+renderHistory();
+/* open the privacy page in the language the visitor is using */
+document.querySelector('.foot-links a[href^="privacy.html"]').addEventListener("click",e=>{
+  e.currentTarget.href = (currentLang==="ja"||currentLang==="ne") ? "privacy.html?lang="+currentLang : "privacy.html";
+});
 
 /* init */
 captureStrings();

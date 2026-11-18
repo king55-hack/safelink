@@ -11,7 +11,9 @@ const s = html.indexOf("<script>");
 const js = html.slice(s + 8, html.indexOf("</script>", s));
 const code = js.slice(js.indexOf("const BRANDS"), js.indexOf("/* ---------- rendering"));
 type Result = { error?: boolean; verdict: string; findings: { sev: string; title: string }[] };
-const analyze = new Function(code + "; return analyze;")() as (u: string) => Result;
+const mod = new Function(code + "; return { analyze, extractLinks };")() as { analyze: (u: string) => Result; extractLinks: (t: string) => string[] };
+const analyze = mod.analyze;
+const extractLinks = mod.extractLinks;
 
 const SCAMS = `
 g00gle.com arnazon.com paypa1.com paypai.com micr0soft.com faceb00k.com amaz0n-login.com pay-pal.com
@@ -60,4 +62,30 @@ test("scheme / structure rules still work", () => {
   assert.equal(analyze("http://192.168.1.1/login").verdict, "danger");
   assert.equal(analyze("https://medium.com/@someone/post").verdict, "safe");
   assert.equal(analyze("http://").error, true);
+});
+
+test("extractLinks finds links inside a pasted message", () => {
+  const sms = "【重要】お客様のアカウントが停止されました。こちらhttps://paypa1.com/login/verify?id=1から確認してください。 詳細: www.amazon-support.top/help.";
+  assert.deepEqual(extractLinks(sms), ["https://paypa1.com/login/verify?id=1", "www.amazon-support.top/help"]);
+
+  assert.deepEqual(extractLinks("Your parcel is held, pay at bit.ly/3abc or http://evil.xyz:8080/x, thanks!"), ["http://evil.xyz:8080/x", "bit.ly/3abc"]);
+  assert.deepEqual(extractLinks("see (https://a.example.org/x)."), ["https://a.example.org/x"]);
+  // duplicates (any case) collapse, order is kept
+  assert.deepEqual(extractLinks("HTTPS://A.top/x https://a.top/x https://b.top"), ["HTTPS://A.top/x", "https://b.top"]);
+  // dangerous pseudo-links are surfaced so they can be flagged
+  assert.deepEqual(extractLinks("click javascript:alert(1) now"), ["javascript:alert(1)"]);
+});
+
+test("extractLinks ignores things that are not links", () => {
+  assert.deepEqual(extractLinks("mail me at john.doe@gmail.com or see file.txt, e.g. i.e. version 1.2.3"), []);
+  assert.deepEqual(extractLinks(""), []);
+  assert.deepEqual(extractLinks("no links here at all"), []);
+  assert.ok(extractLinks("a.com ".repeat(100)).length <= 20);   // capped (and de-duplicated)
+});
+
+test("every extracted link can be analysed", () => {
+  for (const l of extractLinks("x https://paypa1.com/a y www.google.com z bit.ly/abc w javascript:alert(1)")) {
+    const r = analyze(l);
+    assert.ok(r.error || ["safe", "warn", "danger"].includes(r.verdict), l);
+  }
 });

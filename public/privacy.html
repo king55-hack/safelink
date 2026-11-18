@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy &amp; About — SafeLink</title>
+<meta name="description" content="How SafeLink works, what data it uses and which services it talks to. Plain-language privacy notice in English, 日本語 and नेपाली.">
+<link rel="canonical" href="https://safelink.rajanrimal.com.np/privacy.html">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="theme-color" content="#12294A">
+<style>
+  :root{--ink:#12294A;--ink-soft:#33455f;--canvas:#eef2f7;--surface:#fff;--line:#dbe3ec;--muted:#64717f;--accent:#1795ad;--accent-dark:#127e93;--accent-tint:#e4f4f7;--radius:16px}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Inter",system-ui,-apple-system,"Segoe UI","Hiragino Sans","Yu Gothic UI",Meiryo,"Nirmala UI",Roboto,sans-serif;color:var(--ink);background:var(--canvas);line-height:1.65}
+  .wrap{max-width:820px;margin:0 auto;padding:0 20px}
+  header{padding:20px 0 6px}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .bar img{height:42px;width:auto;display:block}
+  .langs{display:flex;gap:6px}
+  .langs button{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:.88rem;padding:7px 13px;border-radius:10px;cursor:pointer}
+  .langs button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .langs button:focus-visible,a:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  main{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:8px 26px 28px;margin:18px 0 40px;box-shadow:0 10px 30px -12px rgba(18,41,74,.2)}
+  h1{font-size:1.7rem;line-height:1.2;margin:24px 0 4px}
+  h2{font-size:1.1rem;margin:28px 0 6px;color:var(--ink)}
+  p,li{color:var(--ink-soft);font-size:.96rem}
+  ul{padding-inline-start:1.2rem;margin:6px 0}
+  li{margin:4px 0}
+  a{color:var(--accent-dark)}
+  .meta{color:var(--muted);font-size:.85rem}
+  table{border-collapse:collapse;width:100%;font-size:.9rem;margin:8px 0}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:start;vertical-align:top}
+  th{background:var(--accent-tint)}
+  .note{background:var(--accent-tint);border:1px solid #bfe4ea;border-radius:12px;padding:12px 14px;margin:14px 0}
+  [data-lang]{display:none}
+  [data-lang].on{display:block}
+  .back{display:inline-block;margin:6px 0 0;font-weight:600;text-decoration:none}
+  .back:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <a href="./" aria-label="SafeLink"><img src="logo.webp" alt="SafeLink — Trusted web checker" width="635" height="216"></a>
+    <div class="langs" role="group" aria-label="Language">
+      <button type="button" data-pick="en">English</button>
+      <button type="button" data-pick="ja">日本語</button>
+      <button type="button" data-pick="ne">नेपाली</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><main>
+
+<!-- ======================= ENGLISH ======================= -->
+<div data-lang="en">
+  <h1>Privacy &amp; About</h1>
+  <p class="meta">Last updated: 2026-11-18. This page describes what SafeLink does today and is updated if that changes.</p>
+  <a class="back" href="./">← Back to SafeLink</a>
+
+  <h2>What SafeLink is</h2>
+  <p>SafeLink is a free tool that checks a link or QR code and explains, in plain words, whether it shows signs of a scam. It looks at the link itself (look-alike names, odd endings, redirects), the age of the domain, the website's security certificate, and lists of known dangerous sites.</p>
+  <div class="note"><strong>Important:</strong> no tool can guarantee that a link is safe or dangerous. SafeLink gives warning signs to help you decide; it can be wrong. When in doubt, don't enter passwords or payment details, and go to the company's official site by typing its address yourself.</div>
+
+  <h2>What happens when you check a link</h2>
+  <ul>
+    <li><strong>In your browser:</strong> the link's address and structure are analysed on your device. Nothing is sent for this step.</li>
+    <li><strong>Deeper check:</strong> your browser sends the link to SafeLink's server (Cloudflare Workers). The server then
+      <ul>
+        <li>opens the link itself, without your cookies, to follow redirects. The checked website therefore sees a request from Cloudflare's network, not your device;</li>
+        <li>asks public domain registries (via rdap.org) when the domain was registered;</li>
+        <li>asks <strong>Google Safe Browsing</strong> and <strong>VirusTotal</strong> whether the link is known to be dangerous;</li>
+        <li>asks <strong>CertSpotter (SSLMate)</strong> for the public certificate records of the site name;</li>
+        <li>counts how many people reported the site to SafeLink.</li>
+      </ul>
+    </li>
+    <li><strong>We do not keep a record of the links you check.</strong> Answers from the services above may be cached for up to a few hours (under a key made from the link or domain) to save quota and time; they expire automatically.</li>
+  </ul>
+
+  <h2>Reporting a scam</h2>
+  <p>If you use "Report a scam" we save: the link <em>without</em> anything after “?” or “#” (and without any username or password), the category you chose, your optional note, your language, the time, and a one-way scrambled code made from your connection and the month. Your IP address itself is never saved; the code only stops one person from reporting the same site many times. Please don't put personal details in the note.</p>
+  <p>Reports are not shown publicly. They are used to show "Reported by other users" (a count only) on checks of the same site, and may be reviewed and deleted by the operator. To have a report removed, open an issue (see Contact) naming the link. The form is protected from bots by Cloudflare Turnstile.</p>
+
+  <h2>Stored on your device</h2>
+  <ul>
+    <li><strong>Recent checks</strong> (site name and path only, no query string; the last 20): saved in your browser only, never sent to us. Use “Clear history” or “Stop saving” on the page at any time.</li>
+    <li><strong>Translations</strong> you have already loaded, so the page is faster next time.</li>
+    <li>SafeLink sets no tracking cookies and uses no analytics or advertising. Cloudflare Turnstile (report form only) may use its own cookies or storage.</li>
+  </ul>
+
+  <h2>Languages</h2>
+  <p>English, Nepali and Japanese are built in. If you pick another language, the page's text is translated by Google Translate or MyMemory directly from your browser. That text can include domain names from your results.</p>
+
+  <h2>QR codes and camera</h2>
+  <p>QR codes are read on your device (camera or uploaded photo). The image is never uploaded.</p>
+
+  <h2>Services we use</h2>
+  <table>
+    <tr><th>Service</th><th>Used for</th><th>Learn more</th></tr>
+    <tr><td>Cloudflare</td><td>Hosting, database for reports, bot check (Turnstile), request logs</td><td><a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">cloudflare.com/privacypolicy</a></td></tr>
+    <tr><td>Google Safe Browsing</td><td>Known dangerous sites</td><td><a href="https://policies.google.com/privacy" rel="noopener">policies.google.com/privacy</a></td></tr>
+    <tr><td>VirusTotal</td><td>Security-vendor verdicts</td><td><a href="https://support.virustotal.com/hc/en-us/articles/115002168385-Privacy-Policy" rel="noopener">VirusTotal privacy policy</a></td></tr>
+    <tr><td>CertSpotter (SSLMate)</td><td>Public certificate records</td><td><a href="https://sslmate.com/privacy" rel="noopener">sslmate.com/privacy</a></td></tr>
+    <tr><td>rdap.org</td><td>Domain registration date</td><td><a href="https://about.rdap.org/" rel="noopener">about.rdap.org</a></td></tr>
+    <tr><td>Google Translate, MyMemory</td><td>Other languages (from your browser)</td><td><a href="https://mymemory.translated.net/doc/privacy.php" rel="noopener">MyMemory privacy</a></td></tr>
+  </table>
+  <p>Cloudflare, our hosting provider, may log technical data for each request (such as IP address, time, page address and status) to run and debug the service. We do not use these logs to identify or profile people.</p>
+
+  <h2>Open source and contact</h2>
+  <p>SafeLink's code is open source (MIT license): <a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>. For questions, mistakes in a result, or removal requests, please <a href="https://github.com/king55-hack/safelink/issues" rel="noopener">open an issue</a>.</p>
+</div>
+
+<!-- ======================= 日本語 ======================= -->
+<div data-lang="ja" lang="ja">
+  <h1>プライバシーと概要</h1>
+  <p class="meta">最終更新：2026-11-18。このページは現在のSafeLinkの動作を説明するもので、変更があれば更新します。</p>
+  <a class="back" href="./">← SafeLinkに戻る</a>
+
+  <h2>SafeLinkとは</h2>
+  <p>SafeLinkは、リンクやQRコードに詐欺の兆候がないかを、わかりやすい言葉で説明する無料ツールです。リンク自体（そっくりな名前、不審なドメインの末尾、リダイレクト）、ドメインの年齢、ウェブサイトのセキュリティ証明書、既知の危険サイトのリストを調べます。</p>
+  <div class="note"><strong>ご注意：</strong>リンクが安全または危険であると保証できるツールはありません。SafeLinkは判断の手がかりとなる警告サインを示すもので、誤りの可能性もあります。迷ったときはパスワードや支払い情報を入力せず、会社の公式サイトのアドレスを自分で入力してアクセスしてください。</div>
+
+  <h2>リンクを確認するときの流れ</h2>
+  <ul>
+    <li><strong>ブラウザ内：</strong>リンクのアドレスと構造は、お使いの端末上で解析します。この段階では何も送信しません。</li>
+    <li><strong>詳細チェック：</strong>ブラウザがリンクをSafeLinkのサーバー（Cloudflare Workers）に送信します。サーバーは次の処理を行います。
+      <ul>
+        <li>Cookieを付けずにリンクを開き、リダイレクトをたどります。確認先のサイトには、お使いの端末ではなくCloudflareのネットワークからのアクセスとして見えます。</li>
+        <li>公開ドメイン登録情報（rdap.org経由）からドメインの登録日を取得します。</li>
+        <li><strong>Google セーフブラウジング</strong>と<strong>VirusTotal</strong>に、既知の危険リンクかどうかを照会します。</li>
+        <li><strong>CertSpotter（SSLMate）</strong>に、サイト名の公開証明書記録を照会します。</li>
+        <li>SafeLinkに寄せられた報告の人数を数えます。</li>
+      </ul>
+    </li>
+    <li><strong>確認したリンクの記録は残しません。</strong>上記サービスからの回答は、クォータ節約と高速化のため、リンクまたはドメインを元にしたキーで最大数時間キャッシュされ、自動的に消えます。</li>
+  </ul>
+
+  <h2>詐欺の報告</h2>
+  <p>「詐欺を報告」を使うと、次の情報を保存します：リンク（「?」「#」以降、ユーザー名・パスワードは除く）、選択した種類、任意のメモ、言語、時刻、そして接続元と月から作った元に戻せない変換コード。IPアドレス自体は保存しません。変換コードは、同じ人が同じサイトを何度も報告することを防ぐためだけに使います。メモに個人情報は書かないでください。</p>
+  <p>報告は公開されません。同じサイトを確認したときに「他のユーザーから報告があります」（人数のみ）を表示するために使い、運営者が確認・削除することがあります。報告の削除を希望する場合は、リンクを添えてIssueを作成してください（連絡先参照）。フォームはCloudflare Turnstileでボットから保護されています。</p>
+
+  <h2>お使いの端末に保存されるもの</h2>
+  <ul>
+    <li><strong>最近の確認</strong>（サイト名とパスのみ、クエリ文字列なし、最新20件）：ブラウザ内にのみ保存され、当方には送信されません。ページ上の「履歴を消去」「保存を停止」でいつでも削除・停止できます。</li>
+    <li>読み込み済みの<strong>翻訳</strong>（次回の表示を速くするため）。</li>
+    <li>SafeLinkは追跡Cookie、アクセス解析、広告を使用しません。Cloudflare Turnstile（報告フォームのみ）は独自のCookieやストレージを使う場合があります。</li>
+  </ul>
+
+  <h2>言語</h2>
+  <p>英語・ネパール語・日本語は内蔵されています。それ以外の言語を選ぶと、ページの文章がお使いのブラウザから直接Google翻訳またはMyMemoryで翻訳されます。この文章には、結果に含まれるドメイン名が含まれることがあります。</p>
+
+  <h2>QRコードとカメラ</h2>
+  <p>QRコードはお使いの端末上（カメラまたはアップロードした写真）で読み取ります。画像がアップロードされることはありません。</p>
+
+  <h2>利用しているサービス</h2>
+  <table>
+    <tr><th>サービス</th><th>用途</th><th>詳細</th></tr>
+    <tr><td>Cloudflare</td><td>ホスティング、報告用データベース、ボット対策（Turnstile）、リクエストログ</td><td><a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">cloudflare.com/privacypolicy</a></td></tr>
+    <tr><td>Google セーフブラウジング</td><td>既知の危険サイト</td><td><a href="https://policies.google.com/privacy" rel="noopener">policies.google.com/privacy</a></td></tr>
+    <tr><td>VirusTotal</td><td>セキュリティベンダーの判定</td><td><a href="https://support.virustotal.com/hc/en-us/articles/115002168385-Privacy-Policy" rel="noopener">VirusTotal プライバシーポリシー</a></td></tr>
+    <tr><td>CertSpotter（SSLMate）</td><td>公開証明書の記録</td><td><a href="https://sslmate.com/privacy" rel="noopener">sslmate.com/privacy</a></td></tr>
+    <tr><td>rdap.org</td><td>ドメインの登録日</td><td><a href="https://about.rdap.org/" rel="noopener">about.rdap.org</a></td></tr>
+    <tr><td>Google翻訳、MyMemory</td><td>その他の言語（ブラウザから）</td><td><a href="https://mymemory.translated.net/doc/privacy.php" rel="noopener">MyMemory プライバシー</a></td></tr>
+  </table>
+  <p>ホスティング事業者のCloudflareは、サービスの運用とデバッグのため、リクエストごとの技術情報（IPアドレス、時刻、ページのアドレス、ステータスなど）を記録することがあります。当方はこのログを個人の特定やプロファイリングに使用しません。</p>
+
+  <h2>オープンソースと連絡先</h2>
+  <p>SafeLinkのコードはオープンソース（MITライセンス）です：<a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>。ご質問、結果の誤り、削除のご依頼は<a href="https://github.com/king55-hack/safelink/issues" rel="noopener">Issue</a>からお知らせください。</p>
+</div>
+
+<!-- ======================= नेपाली ======================= -->
+<div data-lang="ne" lang="ne">
+  <h1>गोपनीयता र बारेमा</h1>
+  <p class="meta">पछिल्लो अद्यावधिक: 2026-11-18। यो पृष्ठले SafeLink ले अहिले के गर्छ भनेर वर्णन गर्छ; केही परिवर्तन भए यो अद्यावधिक गरिन्छ।</p>
+  <a class="back" href="./">← SafeLink मा फर्कनुहोस्</a>
+
+  <h2>SafeLink भनेको के हो</h2>
+  <p>SafeLink एउटा निःशुल्क उपकरण हो जसले लिङ्क वा QR कोड जाँचेर त्यसमा ठगीका सङ्केत छन् कि छैनन् भनी सजिलो भाषामा बुझाउँछ। यसले लिङ्क आफैँ (मिल्दोजुल्दो नाम, अनौठो अन्त्य, रिडाइरेक्ट), डोमेनको उमेर, वेबसाइटको सुरक्षा प्रमाणपत्र र ज्ञात खतरनाक साइटका सूची हेर्छ।</p>
+  <div class="note"><strong>महत्त्वपूर्ण:</strong> कुनै पनि उपकरणले लिङ्क सुरक्षित वा खतरनाक छ भनी ग्यारेन्टी दिन सक्दैन। SafeLink ले निर्णय गर्न मद्दत गर्ने चेतावनीका सङ्केत मात्र दिन्छ; यो गलत हुन सक्छ। शङ्का लागे पासवर्ड वा भुक्तानी विवरण नहाल्नुहोस्, र कम्पनीको आधिकारिक साइटको ठेगाना आफैँ टाइप गरेर जानुहोस्।</div>
+
+  <h2>लिङ्क जाँच्दा के हुन्छ</h2>
+  <ul>
+    <li><strong>तपाईंको ब्राउजरमा:</strong> लिङ्कको ठेगाना र बनोट तपाईंकै उपकरणमा विश्लेषण गरिन्छ। यो चरणमा केही पठाइँदैन।</li>
+    <li><strong>थप गहिरो जाँच:</strong> तपाईंको ब्राउजरले लिङ्क SafeLink को सर्भर (Cloudflare Workers) मा पठाउँछ। सर्भरले:
+      <ul>
+        <li>तपाईंको कुकी बिना लिङ्क खोलेर रिडाइरेक्ट पछ्याउँछ। त्यसैले जाँचिएको वेबसाइटले तपाईंको उपकरण होइन, Cloudflare को नेटवर्कबाट अनुरोध देख्छ;</li>
+        <li>सार्वजनिक डोमेन रजिस्ट्री (rdap.org मार्फत) बाट डोमेन कहिले दर्ता भयो भनी सोध्छ;</li>
+        <li><strong>Google Safe Browsing</strong> र <strong>VirusTotal</strong> लाई यो लिङ्क खतरनाक भनी चिनिएको छ कि छैन सोध्छ;</li>
+        <li><strong>CertSpotter (SSLMate)</strong> लाई साइटको नामको सार्वजनिक प्रमाणपत्र अभिलेख सोध्छ;</li>
+        <li>कति जनाले SafeLink मा यो साइट रिपोर्ट गरे भनी गन्छ।</li>
+      </ul>
+    </li>
+    <li><strong>तपाईंले जाँचेका लिङ्कको अभिलेख हामी राख्दैनौं।</strong> माथिका सेवाहरूका जवाफ कोटा र समय जोगाउन लिङ्क वा डोमेनबाट बनेको कुञ्जीमा केही घण्टासम्म क्यास हुन सक्छन्; ती आफैँ मेटिन्छन्।</li>
+  </ul>
+
+  <h2>ठगी रिपोर्ट गर्दा</h2>
+  <p>“ठगी रिपोर्ट गर्नुहोस्” प्रयोग गर्दा हामी यी सुरक्षित गर्छौं: “?” वा “#” पछिको भाग र प्रयोगकर्ता नाम/पासवर्ड बिनाको लिङ्क, तपाईंले छानेको प्रकार, ऐच्छिक टिपोट, भाषा, समय, र तपाईंको जडान र महिनाबाट बनेको एकतर्फी स्क्र्याम्बल गरिएको कोड। तपाईंको IP ठेगाना आफैँ कहिल्यै सुरक्षित गरिँदैन; त्यो कोडले एउटै व्यक्तिले एउटै साइट धेरै पटक रिपोर्ट गर्न मात्र रोक्छ। कृपया टिपोटमा व्यक्तिगत विवरण नराख्नुहोस्।</p>
+  <p>रिपोर्टहरू सार्वजनिक रूपमा देखाइँदैनन्। ती एउटै साइटको जाँचमा “अन्य प्रयोगकर्ताले रिपोर्ट गरेको” (सङ्ख्या मात्र) देखाउन प्रयोग हुन्छन्, र सञ्चालकले हेर्न र मेटाउन सक्छन्। रिपोर्ट हटाउन लिङ्क उल्लेख गरी Issue खोल्नुहोस् (सम्पर्क हेर्नुहोस्)। फारम Cloudflare Turnstile ले बोटबाट जोगाएको छ।</p>
+
+  <h2>तपाईंको उपकरणमा के सुरक्षित हुन्छ</h2>
+  <ul>
+    <li><strong>हालका जाँचहरू</strong> (साइटको नाम र पथ मात्र, क्वेरी बिना; पछिल्ला २०): तपाईंको ब्राउजरमा मात्र सुरक्षित हुन्छ, हामीलाई कहिल्यै पठाइँदैन। पृष्ठमा “इतिहास मेटाउनुहोस्” वा “सुरक्षित गर्न बन्द गर्नुहोस्” कुनै पनि बेला प्रयोग गर्नुहोस्।</li>
+    <li>पहिले नै लोड भएका <strong>अनुवाद</strong>, ताकि अर्को पटक पृष्ठ छिटो खुलोस्।</li>
+    <li>SafeLink ले ट्र्याकिङ कुकी, एनालिटिक्स वा विज्ञापन प्रयोग गर्दैन। Cloudflare Turnstile (रिपोर्ट फारममा मात्र) ले आफ्नै कुकी वा स्टोरेज प्रयोग गर्न सक्छ।</li>
+  </ul>
+
+  <h2>भाषा</h2>
+  <p>अङ्ग्रेजी, नेपाली र जापानी भित्रै बनेका छन्। अर्को भाषा छान्दा पृष्ठको पाठ तपाईंको ब्राउजरबाटै सिधै Google Translate वा MyMemory ले अनुवाद गर्छ। त्यस पाठमा तपाईंको नतिजामा देखिएका डोमेन नाम पर्न सक्छन्।</p>
+
+  <h2>QR कोड र क्यामेरा</h2>
+  <p>QR कोड तपाईंकै उपकरणमा (क्यामेरा वा अपलोड गरिएको फोटो) पढिन्छ। तस्बिर कहिल्यै अपलोड गरिँदैन।</p>
+
+  <h2>हामीले प्रयोग गर्ने सेवाहरू</h2>
+  <table>
+    <tr><th>सेवा</th><th>के का लागि</th><th>थप जानकारी</th></tr>
+    <tr><td>Cloudflare</td><td>होस्टिङ, रिपोर्टको डाटाबेस, बोट जाँच (Turnstile), अनुरोध लग</td><td><a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">cloudflare.com/privacypolicy</a></td></tr>
+    <tr><td>Google Safe Browsing</td><td>ज्ञात खतरनाक साइट</td><td><a href="https://policies.google.com/privacy" rel="noopener">policies.google.com/privacy</a></td></tr>
+    <tr><td>VirusTotal</td><td>सुरक्षा कम्पनीहरूको निर्णय</td><td><a href="https://support.virustotal.com/hc/en-us/articles/115002168385-Privacy-Policy" rel="noopener">VirusTotal privacy policy</a></td></tr>
+    <tr><td>CertSpotter (SSLMate)</td><td>सार्वजनिक प्रमाणपत्र अभिलेख</td><td><a href="https://sslmate.com/privacy" rel="noopener">sslmate.com/privacy</a></td></tr>
+    <tr><td>rdap.org</td><td>डोमेन दर्ता मिति</td><td><a href="https://about.rdap.org/" rel="noopener">about.rdap.org</a></td></tr>
+    <tr><td>Google Translate, MyMemory</td><td>अन्य भाषा (तपाईंको ब्राउजरबाट)</td><td><a href="https://mymemory.translated.net/doc/privacy.php" rel="noopener">MyMemory privacy</a></td></tr>
+  </table>
+  <p>हाम्रो होस्टिङ प्रदायक Cloudflare ले सेवा चलाउन र त्रुटि खोज्न प्रत्येक अनुरोधको प्राविधिक विवरण (जस्तै IP ठेगाना, समय, पृष्ठको ठेगाना र स्थिति) लग गर्न सक्छ। हामी यी लग मानिस चिन्न वा प्रोफाइल बनाउन प्रयोग गर्दैनौं।</p>
+
+  <h2>ओपन सोर्स र सम्पर्क</h2>
+  <p>SafeLink को कोड ओपन सोर्स (MIT लाइसेन्स) हो: <a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>। प्रश्न, नतिजामा गल्ती वा हटाउने अनुरोधका लागि कृपया <a href="https://github.com/king55-hack/safelink/issues" rel="noopener">Issue खोल्नुहोस्</a>।</p>
+</div>
+
+</main></div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll("[data-lang]"), btns=document.querySelectorAll("[data-pick]");
+  var titles={en:"Privacy & About — SafeLink",ja:"プライバシーと概要 — SafeLink",ne:"गोपनीयता र बारेमा — SafeLink"};
+  function pick(l){
+    if(!titles[l]) l="en";
+    blocks.forEach(function(b){b.classList.toggle("on",b.getAttribute("data-lang")===l);});
+    btns.forEach(function(b){b.setAttribute("aria-pressed",String(b.getAttribute("data-pick")===l));});
+    document.documentElement.lang=l; document.title=titles[l];
+  }
+  btns.forEach(function(b){b.addEventListener("click",function(){pick(b.getAttribute("data-pick"));});});
+  var q=new URLSearchParams(location.search).get("lang"), nav=(navigator.language||"en").slice(0,2);
+  pick(q||(nav==="ja"||nav==="ne"?nav:"en"));
+})();
+</script>
+</body>
+</html>

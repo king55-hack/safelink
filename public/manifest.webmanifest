@@ -1,0 +1,23 @@
+{
+  "id": "/",
+  "name": "SafeLink — Check if a link is safe",
+  "short_name": "SafeLink",
+  "description": "Check if a link or QR code is safe before you click. Share a suspicious link from SMS or WhatsApp straight to SafeLink.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eef2f7",
+  "theme_color": "#12294A",
+  "lang": "en",
+  "categories": ["security", "utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  }
+}
