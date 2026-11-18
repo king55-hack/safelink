@@ -37,9 +37,21 @@ npm run typecheck
 
 ```sh
 npx wrangler login
+npx wrangler d1 create safelink-reports     # then put the printed id into wrangler.jsonc (d1_databases)
+npx wrangler d1 migrations apply DB --remote
 npx wrangler secret put SAFE_BROWSING_KEY   # optional: Google Safe Browsing API key
+npx wrangler secret put TURNSTILE_SECRET    # optional: Turnstile secret (and set TURNSTILE_SITE_KEY in public/index.html)
 npm run deploy
 ```
+
+## Report a scam
+
+"Report a scam" (button in every result + footer link) sends `POST /api/report` and stores the report in Cloudflare D1:
+
+- Only the link **without** query string / fragment / credentials, the category and an optional note are saved. IP addresses are never stored; a one-way salted hash (IP + month) makes one person count once per site.
+- Spam protection: per-IP rate limit (5/min), hidden honeypot field and an optional Cloudflare Turnstile check.
+- Checked links show "Reported by other users" when different people reported the same site (info for 1–2 reports, warning for 3+). It never makes a site "dangerous" by itself, so false reports cannot blacklist a legitimate site.
+- Reports are not displayed anywhere publicly. Read them with `npx wrangler d1 execute DB --remote --command "SELECT * FROM reports ORDER BY id DESC LIMIT 50"`.
 
 `/api/check` is rate limited per IP (see `ratelimits` in `wrangler.jsonc`). Never commit API keys; use `wrangler secret` (or `.dev.vars` locally, which is git-ignored).
 

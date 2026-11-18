@@ -34,3 +34,33 @@ test("parseRdap", () => {
   assert.equal(parseRdap({}), null);
   assert.equal(parseRdap({ events: [{ eventAction: "registration", eventDate: "nope" }] }), null);
 });
+
+import { sanitizeReport } from "../src/lib.ts";
+
+test("sanitizeReport strips private parts and validates", () => {
+  const ok = sanitizeReport({ url: "https://Evil-PayPa1.xyz:8443/login?email=a@b.com&t=1#x", category: "phishing", note: "  hi\u0001 there  ", lang: "ja" });
+  assert.ok(ok.ok);
+  if (ok.ok) {
+    assert.equal(ok.value.url, "https://evil-paypa1.xyz/login");
+    assert.equal(ok.value.host, "evil-paypa1.xyz");
+    assert.equal(ok.value.note, "hi there");
+    assert.equal(ok.value.lang, "ja");
+  }
+  // credentials never survive
+  const cred = sanitizeReport({ url: "https://user:pw@scam.top/a", category: "other" });
+  assert.ok(cred.ok && !cred.value.url.includes("pw") && !cred.value.url.includes("user"));
+  // bare domain is accepted
+  assert.ok(sanitizeReport({ url: "scam-shop.top", category: "shopping" }).ok);
+  // notes are capped, bad language dropped
+  const long = sanitizeReport({ url: "https://a.top", category: "other", note: "x".repeat(900), lang: "<script>" });
+  assert.ok(long.ok && long.value.note.length === 500 && long.value.lang === "");
+});
+
+test("sanitizeReport rejects junk", () => {
+  for (const bad of [
+    { url: "javascript:alert(1)", category: "other" }, { url: "ftp://a.com/x", category: "other" },
+    { url: "http://localhost/x", category: "other" }, { url: "http://intranet/x", category: "other" },
+    { url: "https://a.com", category: "hacking" }, { url: "https://a.com" }, { category: "other" },
+    { url: 123, category: "other" }, null, "str",
+  ]) assert.equal(sanitizeReport(bad as any).ok, false, JSON.stringify(bad));
+});

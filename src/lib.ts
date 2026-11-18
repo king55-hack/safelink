@@ -45,3 +45,38 @@ export function parseRdap(json: any, now = Date.now()): RdapInfo | null {
   if (!Number.isFinite(t)) return null;
   return { registeredAt: new Date(t).toISOString(), ageDays: Math.max(0, Math.floor((now - t) / 86_400_000)) };
 }
+
+/* ---------------- community reports ---------------- */
+
+export const REPORT_CATEGORIES = ["phishing", "malware", "shopping", "impersonation", "qr", "other"] as const;
+export type ReportCategory = (typeof REPORT_CATEGORIES)[number];
+
+export interface ReportInput { url: string; host: string; category: ReportCategory; note: string; lang: string }
+
+/**
+ * Validate and clean a user-submitted report.
+ * The stored URL never contains credentials, port, query string or fragment (they often hold personal data).
+ */
+export function sanitizeReport(body: any): { ok: true; value: ReportInput } | { ok: false; error: string } {
+  if (!body || typeof body !== "object") return { ok: false, error: "invalid body" };
+  if (typeof body.url !== "string") return { ok: false, error: "invalid url" };
+  const u = parseInput(body.url);
+  if (!u || (u.protocol !== "http:" && u.protocol !== "https:")) return { ok: false, error: "invalid url" };
+
+  const host = u.hostname.toLowerCase().replace(/\.$/, "");
+  const looksIp = isIPv4(host) || isIPv6(host);
+  if (!host || host.length > 253) return { ok: false, error: "invalid url" };
+  if (!looksIp && !host.includes(".")) return { ok: false, error: "invalid url" };
+  if (/(^|\.)(localhost|local|internal|intranet|lan|home|corp|test|invalid|example)$/.test(host)) return { ok: false, error: "invalid url" };
+
+  const category = REPORT_CATEGORIES.find((c) => c === body.category);
+  if (!category) return { ok: false, error: "invalid category" };
+
+  let note = typeof body.note === "string" ? body.note : "";
+  note = note.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").trim().slice(0, 500);
+
+  const lang = typeof body.lang === "string" && /^[A-Za-z]{2,3}(-[A-Za-z]{2,4})?$/.test(body.lang) ? body.lang : "";
+
+  const url = (u.protocol + "//" + u.host.replace(/:\d+$/, "") + u.pathname).slice(0, 300);
+  return { ok: true, value: { url, host, category, note, lang } };
+}

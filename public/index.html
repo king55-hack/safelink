@@ -164,6 +164,23 @@
   .qr-frame{position:absolute;inset:18%;border:3px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.3);pointer-events:none}
   .qr-note{margin:10px 0 0;font-size:.8rem;color:var(--muted)}
 
+  .reportbox{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 18px 20px;text-align:start}
+  .reportbox[hidden]{display:none}
+  .reportbox h2{font-family:var(--disp);font-size:1.15rem;margin:0 0 4px}
+  .reportbox .rp-sub{margin:0 0 14px;color:var(--ink-soft);font-size:.92rem}
+  .reportbox label{display:block;font-weight:600;font-size:.88rem;margin:12px 0 5px}
+  .reportbox input[type=text],.reportbox select,.reportbox textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;font-size:.95rem;color:var(--ink);background:#fbfcfe}
+  .reportbox textarea{min-height:86px;resize:vertical}
+  .reportbox input:focus,.reportbox select:focus,.reportbox textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-tint)}
+  .reportbox .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;overflow:hidden}
+  .reportbox .rp-note{font-size:.8rem;color:var(--muted);margin:12px 0 0}
+  .reportbox .rp-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+  .reportbox .rp-actions .btn{flex:0 0 auto}
+  .rp-msg{margin-top:12px;font-size:.92rem;font-weight:600;min-height:1.2em}
+  .rp-msg.ok{color:var(--safe)}.rp-msg.err{color:var(--danger)}
+  .rp-open-row{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+  .foot-report{margin-top:12px}
+
   .deep{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:.88rem;color:var(--muted)}
   .deep .spin{border-color:rgba(18,41,74,.2);border-top-color:var(--accent);margin:0}
 
@@ -240,6 +257,34 @@
   </section>
 
   <section id="result" aria-live="polite"></section>
+
+  <section id="reportBox" class="reportbox" hidden aria-labelledby="rpTitle">
+    <h2 id="rpTitle" data-i18n>Report a scam</h2>
+    <p class="rp-sub" data-i18n>Help protect others by reporting a suspicious link.</p>
+    <form id="rpForm" novalidate>
+      <label for="rpUrl" data-i18n>Link</label>
+      <input type="text" id="rpUrl" inputmode="url" autocomplete="off" spellcheck="false" maxlength="2048">
+      <label for="rpCat" data-i18n>What kind of scam is it?</label>
+      <select id="rpCat">
+        <option value="phishing" data-i18n>Phishing (fake login page)</option>
+        <option value="malware" data-i18n>Malware or harmful download</option>
+        <option value="shopping" data-i18n>Fake shop or shopping scam</option>
+        <option value="impersonation" data-i18n>Pretends to be a company or person</option>
+        <option value="qr" data-i18n>Found in a QR code</option>
+        <option value="other" data-i18n>Something else</option>
+      </select>
+      <label for="rpNote" data-i18n>Details (optional)</label>
+      <textarea id="rpNote" maxlength="500" data-i18n-ph placeholder="What happened? Please don't include personal details."></textarea>
+      <div class="hp" aria-hidden="true"><label>Website <input type="text" id="rpWebsite" tabindex="-1" autocomplete="off"></label></div>
+      <div id="rpTurnstile"></div>
+      <p class="rp-note" data-i18n>We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; a one-way scrambled code is used only to stop duplicate reports.</p>
+      <div class="rp-actions">
+        <button class="btn small" type="submit" id="rpSend" data-i18n>Send report</button>
+        <button class="btn small ghost" type="button" id="rpCancel" data-i18n>Close</button>
+      </div>
+      <div class="rp-msg" id="rpMsg" role="status" data-i18n></div>
+    </form>
+  </section>
 </main>
 
 <footer class="wrap">
@@ -247,6 +292,7 @@
     <b data-i18n>Your privacy:</b> <span data-i18n>SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, and it is not stored.</span>
     <br><b data-i18n>Good to know:</b> <span data-i18n>SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.</span>
   </div>
+  <div class="foot-report"><button class="linkbtn" type="button" id="footReport" data-i18n>Report a scam</button></div>
   <div class="foot-mark">SafeLink <span data-i18n>— Cybersecurity for everyone, not just experts.</span></div>
 </footer>
 
@@ -515,6 +561,7 @@ function render(r,keepHint){
   }
   const a=ADVICE[r.verdict];
   html+='<div class="advice">'+ICONS.bulb+'<div><div class="ft-title" data-i18n>'+a.t+'</div><p data-i18n>'+a.p+'</p></div></div>';
+  html+='<div class="rp-open-row"><button class="linkbtn" type="button" data-report="1"><span data-i18n>Report this link as a scam</span></button></div>';
   html+='</div>';
 
   box.innerHTML=html;
@@ -561,6 +608,11 @@ async function enrich(r,input,my){
 
   if(s.safeBrowsing&&s.safeBrowsing.threats&&s.safeBrowsing.threats.length)
     add("danger","Reported as dangerous by Google Safe Browsing","This link is on a known list of scam, malware or harmful sites. Do not open it.",90);
+
+  if(s.reports&&s.reports.count>0){
+    const n=s.reports.count;
+    add(n>=3?"warn":"info","Reported by other users",n+" "+(n===1?"person has":"people have")+" reported this site as suspicious on SafeLink.",n>=3?20:0);
+  }
 
   if(s.domain&&typeof s.domain.ageDays==="number"){
     const d=s.domain.ageDays, yrs=Math.floor(d/365);
@@ -693,6 +745,28 @@ const NE_BUILTIN = {
  "That file couldn't be read as an image.": "त्यो फाइल तस्बिरका रूपमा पढ्न सकिएन।",
  "No QR code found in that image. Try a clearer, closer photo.": "त्यस तस्बिरमा QR कोड भेटिएन। अझ स्पष्ट र नजिकबाट खिचेको फोटो प्रयास गर्नुहोस्।",
  "This QR code doesn't contain a web link, so there's nothing to check.": "यो QR कोडमा वेब लिङ्क छैन, त्यसैले जाँच्ने केही छैन।",
+ "Report a scam": "ठगी रिपोर्ट गर्नुहोस्",
+ "Report this link as a scam": "यो लिङ्क ठगीको रूपमा रिपोर्ट गर्नुहोस्",
+ "Help protect others by reporting a suspicious link.": "शङ्कास्पद लिङ्क रिपोर्ट गरेर अरूलाई जोगाउन मद्दत गर्नुहोस्।",
+ "Link": "लिङ्क",
+ "What kind of scam is it?": "यो कस्तो ठगी हो?",
+ "Phishing (fake login page)": "फिसिङ (नक्कली लगइन पृष्ठ)",
+ "Malware or harmful download": "म्यालवेयर वा हानिकारक डाउनलोड",
+ "Fake shop or shopping scam": "नक्कली पसल वा किनमेल ठगी",
+ "Pretends to be a company or person": "कम्पनी वा व्यक्तिको नक्कल गर्छ",
+ "Found in a QR code": "QR कोडमा भेटिएको",
+ "Something else": "अरू कुनै",
+ "Details (optional)": "विवरण (ऐच्छिक)",
+ "What happened? Please don't include personal details.": "के भयो? कृपया व्यक्तिगत विवरण नराख्नुहोस्।",
+ "We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; a one-way scrambled code is used only to stop duplicate reports.": "हामी लिङ्क (“?” वा “#” पछिको भाग बिना), तपाईंले छानेको प्रकार र टिपोट सुरक्षित गर्छौं। तपाईंको IP ठेगाना कहिल्यै सुरक्षित गरिँदैन; दोहोरिएका रिपोर्ट रोक्न एकतर्फी स्क्र्याम्बल गरिएको कोड मात्र प्रयोग हुन्छ।",
+ "Send report": "रिपोर्ट पठाउनुहोस्",
+ "Thank you! Your report helps protect others.": "धन्यवाद! तपाईंको रिपोर्टले अरूलाई जोगाउँछ।",
+ "You've already reported this site recently. Thank you!": "तपाईंले यो साइट हालै रिपोर्ट गरिसक्नुभएको छ। धन्यवाद!",
+ "Please enter a valid web link to report.": "रिपोर्ट गर्न मान्य वेब लिङ्क राख्नुहोस्।",
+ "Too many reports right now. Please try again in a minute.": "अहिले धेरै रिपोर्ट भए। कृपया एक मिनेटपछि फेरि प्रयास गर्नुहोस्।",
+ "Please complete the verification first.": "कृपया पहिले प्रमाणीकरण पूरा गर्नुहोस्।",
+ "Couldn't send the report. Please try again later.": "रिपोर्ट पठाउन सकिएन। कृपया पछि फेरि प्रयास गर्नुहोस्।",
+ "Reported by other users": "अन्य प्रयोगकर्ताले रिपोर्ट गरेको",
  "Deeper check paused": "थप जाँच रोकिएको",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "तपाईंले छोटो समयमा धेरै लिङ्क जाँच्नुभयो। थप जाँच फेरि चलाउन कृपया एक मिनेट पर्खनुहोस्।",
  "No warning signs in the address": "ठेगानामा कुनै खतराका सङ्केत छैनन्",
@@ -776,6 +850,28 @@ const JA_BUILTIN = {
  "That file couldn't be read as an image.": "そのファイルは画像として読み込めませんでした。",
  "No QR code found in that image. Try a clearer, closer photo.": "その画像にQRコードが見つかりませんでした。より鮮明で近くから撮った写真をお試しください。",
  "This QR code doesn't contain a web link, so there's nothing to check.": "このQRコードにはウェブリンクが含まれていないため、確認するものがありません。",
+ "Report a scam": "詐欺を報告",
+ "Report this link as a scam": "このリンクを詐欺として報告",
+ "Help protect others by reporting a suspicious link.": "怪しいリンクを報告して、他の人を守りましょう。",
+ "Link": "リンク",
+ "What kind of scam is it?": "どんな詐欺ですか？",
+ "Phishing (fake login page)": "フィッシング（偽のログインページ）",
+ "Malware or harmful download": "マルウェア・有害なダウンロード",
+ "Fake shop or shopping scam": "偽ショップ・ショッピング詐欺",
+ "Pretends to be a company or person": "企業や個人のなりすまし",
+ "Found in a QR code": "QRコードで見つけた",
+ "Something else": "その他",
+ "Details (optional)": "詳細（任意）",
+ "What happened? Please don't include personal details.": "何がありましたか？個人情報は含めないでください。",
+ "We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; a one-way scrambled code is used only to stop duplicate reports.": "保存するのは、リンク（「?」や「#」より後ろは除く）、選択した種類、メモのみです。IPアドレスは一切保存せず、重複報告を防ぐためだけに元に戻せない変換コードを使います。",
+ "Send report": "報告を送信",
+ "Thank you! Your report helps protect others.": "ありがとうございます！あなたの報告が他の人を守ります。",
+ "You've already reported this site recently. Thank you!": "このサイトは最近すでに報告されています。ありがとうございます！",
+ "Please enter a valid web link to report.": "報告する有効なウェブリンクを入力してください。",
+ "Too many reports right now. Please try again in a minute.": "報告が多すぎます。1分ほどしてからもう一度お試しください。",
+ "Please complete the verification first.": "先に確認を完了してください。",
+ "Couldn't send the report. Please try again later.": "報告を送信できませんでした。後でもう一度お試しください。",
+ "Reported by other users": "他のユーザーから報告があります",
  "Deeper check paused": "詳細チェックを一時停止中",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "短時間に多くのリンクを確認しました。詳細チェックを再度行うには、1分ほどお待ちください。",
  "This link bounces through a long chain of redirects, a common way to hide the real destination.": "このリンクは長いリダイレクトの連鎖を経由します。本当の行き先を隠すためによく使われる手口です。",
@@ -793,6 +889,7 @@ const JA_BUILTIN = {
 /* sentences that contain changing parts (names, numbers): matched by pattern, no network needed */
 const q=t=>t.replace(/\u201d, \u201c/g,"\u300d\u300c");
 const JA_PATTERNS = [
+ [/^(\d+) (?:person has|people have) reported this site as suspicious on SafeLink\.$/, m=>m[1]+"人がSafeLinkでこのサイトを怪しいと報告しています。"],
  [/^Uses the name “(.+)” with a suspicious ending$/, m=>"「"+m[1]+"」の名前が不審なドメイン末尾で使われています"],
  [/^“(.+)” is a real brand, but “\.(.+)” is not where it normally lives\. Scammers register the same name under cheap endings\.$/, m=>"「"+m[1]+"」は実在のブランドですが、「."+m[2]+"」は通常使われるドメインではありません。詐欺師は同じ名前を安価なドメインの末尾で登録します。"],
  [/^Looks like “(.+)” but isn't$/, m=>"「"+m[1]+"」に似ていますが、別物です"],
@@ -1047,6 +1144,62 @@ document.getElementById("qrCam").addEventListener("click",startCamera);
 document.getElementById("qrUpload").addEventListener("click",()=>qrFile.click());
 qrFile.addEventListener("change",()=>{const f=qrFile.files&&qrFile.files[0];qrFile.value="";if(f)scanImageFile(f);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!qrPanel.hidden)closeQR();});
+
+/* ---------- Report a scam ---------- */
+const TURNSTILE_SITE_KEY="";   // set to your Cloudflare Turnstile *site* key to enable the bot check (the secret stays on the server)
+const rpBox=document.getElementById("reportBox"), rpForm=document.getElementById("rpForm"), rpMsg=document.getElementById("rpMsg"), rpSend=document.getElementById("rpSend");
+let rpToken="", rpWidget=null, rpScriptLoading=null;
+
+function rpSay(kind,msg){ rpMsg.className="rp-msg "+(kind||""); rpMsg.dataset.en=msg; rpMsg.textContent=msg; if(msg) reapplyLang(); }
+function loadTurnstile(){
+  if(!TURNSTILE_SITE_KEY) return Promise.resolve(false);
+  if(window.turnstile) return Promise.resolve(true);
+  if(!rpScriptLoading) rpScriptLoading=new Promise(res=>{
+    const s=document.createElement("script");
+    s.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"; s.async=true;
+    s.onload=()=>res(true); s.onerror=()=>res(false); document.head.appendChild(s);
+  });
+  return rpScriptLoading;
+}
+async function openReport(url){
+  rpBox.hidden=false; rpSay("","");
+  document.getElementById("rpUrl").value=url||"";
+  rpBox.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"});
+  captureStrings(); reapplyLang();
+  document.getElementById(url?"rpCat":"rpUrl").focus();
+  if(await loadTurnstile()&&window.turnstile){
+    const box=document.getElementById("rpTurnstile");
+    if(rpWidget===null) rpWidget=window.turnstile.render(box,{sitekey:TURNSTILE_SITE_KEY,callback:t=>{rpToken=t;},"expired-callback":()=>{rpToken="";}});
+    else window.turnstile.reset(rpWidget);
+    rpToken="";
+  }
+}
+function closeReport(){ rpBox.hidden=true; }
+
+rpForm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const url=document.getElementById("rpUrl").value.trim();
+  if(!url){ rpSay("err","Please enter a valid web link to report."); return; }
+  if(TURNSTILE_SITE_KEY&&!rpToken){ rpSay("err","Please complete the verification first."); return; }
+  rpSend.disabled=true; rpSay("","");
+  try{
+    const res=await fetch("/api/report",{method:"POST",headers:{"Content-Type":"application/json"},signal:AbortSignal.timeout(15000),body:JSON.stringify({
+      url, category:document.getElementById("rpCat").value, note:document.getElementById("rpNote").value,
+      lang:currentLang, website:document.getElementById("rpWebsite").value, token:rpToken })});
+    if(res.ok){
+      const j=await res.json();
+      rpSay("ok", j.duplicate?"You've already reported this site recently. Thank you!":"Thank you! Your report helps protect others.");
+      document.getElementById("rpNote").value="";
+    } else if(res.status===429) rpSay("err","Too many reports right now. Please try again in a minute.");
+    else if(res.status===400) rpSay("err","Please enter a valid web link to report.");
+    else if(res.status===403) rpSay("err","Please complete the verification first.");
+    else rpSay("err","Couldn't send the report. Please try again later.");
+  }catch(_){ rpSay("err","Couldn't send the report. Please try again later."); }
+  finally{ rpSend.disabled=false; if(rpWidget!==null&&window.turnstile){window.turnstile.reset(rpWidget);rpToken="";} }
+});
+document.getElementById("rpCancel").addEventListener("click",closeReport);
+document.getElementById("footReport").addEventListener("click",()=>openReport(document.getElementById("url").value.trim()));
+document.getElementById("result").addEventListener("click",e=>{ if(e.target.closest("[data-report]")) openReport(document.getElementById("url").value.trim()); });
 
 /* init */
 captureStrings();

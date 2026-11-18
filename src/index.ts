@@ -1,4 +1,4 @@
-import { blockedReason, parseInput, parseRdap, registrableDomain, type RdapInfo } from "./lib.ts";
+import { blockedReason, parseInput, parseRdap, registrableDomain, sanitizeReport, type RdapInfo } from "./lib.ts";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -6,6 +6,14 @@ export interface Env {
   SAFE_BROWSING_KEY?: string;
   /** Per-IP rate limiter (see "ratelimits" in wrangler.jsonc) */
   CHECK_LIMITER?: RateLimit;
+  /** Per-IP limiter for /api/report */
+  REPORT_LIMITER?: RateLimit;
+  /** D1 database holding community reports */
+  DB?: D1Database;
+  /** Optional Cloudflare Turnstile secret (wrangler secret put TURNSTILE_SECRET) */
+  TURNSTILE_SECRET?: string;
+  /** Optional salt for the one-way reporter hash (wrangler secret put REPORT_SALT) */
+  REPORT_SALT?: string;
 }
 
 const MAX_HOPS = 8;
@@ -92,6 +100,77 @@ async function safeBrowsing(urls: string[], key: string | undefined): Promise<{ 
   }
 }
 
+/** How many different people reported these hosts (each reporter counts once per site). */
+async function reportCount(env: Env, hosts: string[]): Promise<number> {
+  if (!env.DB || hosts.length === 0) return 0;
+  try {
+    const marks = hosts.map(() => "?").join(",");
+    const row = await env.DB.prepare("SELECT COUNT(DISTINCT reporter) AS n FROM reports WHERE host IN (" + marks + ")").bind(...hosts).first<{ n: number }>();
+    return row?.n ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function verifyTurnstile(token: unknown, secret: string, ip: string): Promise<boolean> {
+  if (typeof token !== "string" || token.length === 0 || token.length > 2048) return false;
+  try {
+    const form = new FormData();
+    form.append("secret", secret);
+    form.append("response", token);
+    if (ip) form.append("remoteip", ip);
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form, signal: AbortSignal.timeout(5000) });
+    const data: any = await res.json();
+    return data?.success === true;
+  } catch {
+    return false;
+  }
+}
+
+async function handleReport(request: Request, env: Env): Promise<Response> {
+  if (request.method !== "POST") return json({ error: "use POST" }, 405);
+  if (!env.DB) return json({ error: "reports unavailable" }, 503);
+  const ip = request.headers.get("cf-connecting-ip") ?? "";
+
+  if (env.REPORT_LIMITER) {
+    const { success } = await env.REPORT_LIMITER.limit({ key: ip || "unknown" });
+    if (!success) return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { "content-type": "application/json; charset=utf-8", "retry-after": "60", "cache-control": "no-store" } });
+  }
+  if (Number(request.headers.get("content-length") ?? 0) > 4096) return json({ error: "request too large" }, 413);
+
+  let body: any;
+  try { body = await request.json(); } catch { return json({ error: "invalid json" }, 400); }
+
+  // honeypot: real people never fill the hidden field; pretend success so bots learn nothing
+  if (typeof body?.website === "string" && body.website.length > 0) return json({ ok: true });
+
+  if (env.TURNSTILE_SECRET && !(await verifyTurnstile(body?.token, env.TURNSTILE_SECRET, ip))) {
+    return json({ error: "verification failed" }, 403);
+  }
+
+  const parsed = sanitizeReport(body);
+  if (!parsed.ok) return json({ error: parsed.error }, 400);
+  const r = parsed.value;
+
+  // one-way hash so a person counts once per site per month; the IP itself is never stored
+  const month = new Date().toISOString().slice(0, 7);
+  const reporter = await sha256Hex(ip + "|" + (env.REPORT_SALT ?? "safelink") + "|" + month);
+
+  try {
+    const res = await env.DB.prepare(
+      "INSERT OR IGNORE INTO reports (host, url, category, note, lang, reporter, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ).bind(r.host, r.url, r.category, r.note || null, r.lang || null, reporter, Math.floor(Date.now() / 1000)).run();
+    return json({ ok: true, duplicate: (res.meta?.changes ?? 0) === 0 });
+  } catch {
+    return json({ error: "could not save report" }, 500);
+  }
+}
+
 async function handleCheck(request: Request, env: Env): Promise<Response> {
   if (request.method !== "POST") return json({ error: "use POST" }, 405);
   // Rate limit first: it is the cheapest check and protects every lookup below it.
@@ -122,9 +201,10 @@ async function handleCheck(request: Request, env: Env): Promise<Response> {
   const blocked = !!blockedReason(start);
 
   // independent lookups run in parallel; we judge the domain the link really lands on
-  const [age, sb] = await Promise.all([
+  const [age, sb, reported] = await Promise.all([
     blocked ? Promise.resolve(null) : domainAge(finalHost),
     blocked ? Promise.resolve({ checked: false, threats: [] as string[] }) : safeBrowsing([...new Set([start.href, finalUrl])], env.SAFE_BROWSING_KEY),
+    reportCount(env, [...new Set([start.hostname.toLowerCase(), finalHost.toLowerCase()])]),
   ]);
 
   return json({
@@ -136,6 +216,7 @@ async function handleCheck(request: Request, env: Env): Promise<Response> {
     reachError: redirects.error ?? null,
     domain: age,
     safeBrowsing: sb,
+    reports: { count: reported },
   });
 }
 
@@ -143,6 +224,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
     if (pathname === "/api/check") return handleCheck(request, env);
+    if (pathname === "/api/report") return handleReport(request, env);
     if (pathname.startsWith("/api/")) return json({ error: "not found" }, 404);
     return env.ASSETS.fetch(request);
   },
