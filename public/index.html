@@ -1146,7 +1146,9 @@ qrFile.addEventListener("change",()=>{const f=qrFile.files&&qrFile.files[0];qrFi
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!qrPanel.hidden)closeQR();});
 
 /* ---------- Report a scam ---------- */
-const TURNSTILE_SITE_KEY="";   // set to your Cloudflare Turnstile *site* key to enable the bot check (the secret stays on the server)
+/* Cloudflare Turnstile *site* key (public by design; the secret lives only on the Worker). Only used on the live hostname,
+   so local development works without the bot check. */
+const TURNSTILE_SITE_KEY=location.hostname==="safelink.rajanrimal.com.np"?"0x4AAAAAAGGZP_6h-Eevc72U":"";
 const rpBox=document.getElementById("reportBox"), rpForm=document.getElementById("rpForm"), rpMsg=document.getElementById("rpMsg"), rpSend=document.getElementById("rpSend");
 let rpToken="", rpWidget=null, rpScriptLoading=null;
 
