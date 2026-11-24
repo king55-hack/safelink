@@ -1369,7 +1369,7 @@ async function showPreview(url){
   try{
     const res=await fetch("/api/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url}),signal:AbortSignal.timeout(45000)});
     if(my!==pvSeq) return;
-    if(res.status===429){ pvSay("Preview isn't available right now. Please try again later.","err"); return; }
+    if(res.status===429||res.status===503){ pvSay("Preview isn't available right now. Please try again later.","err"); return; }
     if(res.status===400){ pvSay("This link can't be previewed.","err"); return; }
     if(!res.ok){ pvSay("Couldn't take a preview. The site may be offline or may block our server.","err"); return; }
     const j=await res.json();

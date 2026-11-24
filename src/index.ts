@@ -18,7 +18,7 @@ export interface Env {
   PREVIEW_LIMITER?: RateLimit;
   /** Cloudflare Browser Rendering binding (screenshot preview) */
   BROWSER?: Fetcher;
-  /** Daily cap on NEW previews (cached ones are free). Default 60. */
+  /** Daily cap on NEW previews (cached ones are free). Default 40 (the free Browser Run plan has 10 browser-minutes/day). */
   PREVIEW_DAILY_MAX?: string;
   /** Secret token that unlocks /admin (>= 16 chars; wrangler secret put ADMIN_TOKEN) */
   ADMIN_TOKEN?: string;
@@ -348,10 +348,16 @@ async function handlePreview(request: Request, env: Env): Promise<Response> {
   const hit = await cache.match(cacheKey);
   if (hit) return json({ image: await hit.text(), cached: true });
 
+  // whole-site pace: the free Browser Run plan starts at most ~3 browsers per minute for the entire account
+  if (env.PREVIEW_LIMITER) {
+    const { success } = await env.PREVIEW_LIMITER.limit({ key: "global" });
+    if (!success) return json({ error: "busy" }, 429);
+  }
+
   // cap on new previews per day: every one costs Browser Rendering time
   if (env.DB) {
     try {
-      const max = Math.max(1, Number(env.PREVIEW_DAILY_MAX) || 60);
+      const max = Math.max(1, Number(env.PREVIEW_DAILY_MAX) || 40);
       const day = new Date().toISOString().slice(0, 10);
       const row = await env.DB.prepare("INSERT INTO preview_usage (day, n) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET n = n + 1 RETURNING n").bind(day).first<{ n: number }>();
       if ((row?.n ?? 0) > max) return json({ error: "daily limit" }, 429);
@@ -360,7 +366,11 @@ async function handlePreview(request: Request, env: Env): Promise<Response> {
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
   try {
-    browser = await puppeteer.launch(env.BROWSER);
+    try {
+      browser = await puppeteer.launch(env.BROWSER);
+    } catch {
+      return json({ error: "preview unavailable" }, 503); // e.g. today's free browser minutes are used up
+    }
     const page = await browser.newPage();
     await page.setViewport({ width: PREVIEW_W, height: PREVIEW_H });
     await page.setRequestInterception(true);
