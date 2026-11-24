@@ -1,6 +1,6 @@
 import puppeteer from "@cloudflare/puppeteer";
 import { connect } from "cloudflare:sockets";
-import { PREVIEW_SKIP_TYPES, allowPreviewRequest, blockedReason, parseInput, parseRdap, pageParams, parseVtStats, registrableDomain, sanitizeReport, summarizeCerts, timingSafeEqualBytes, vtUrlId, type CertSummary, type RdapInfo, type VtStats } from "./lib.ts";
+import { PREVIEW_SKIP_TYPES, allowPreviewRequest, blockedReason, csvRow, sanitizeContact, parseInput, parseRdap, pageParams, parseVtStats, registrableDomain, sanitizeReport, summarizeCerts, timingSafeEqualBytes, vtUrlId, type CertSummary, type RdapInfo, type VtStats } from "./lib.ts";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -26,7 +26,7 @@ export interface Env {
   DB?: D1Database;
   /** Optional Cloudflare Turnstile secret (wrangler secret put TURNSTILE_SECRET) */
   TURNSTILE_SECRET?: string;
-  /** Optional salt for the one-way reporter hash (wrangler secret put REPORT_SALT) */
+  /** Secret key (16+ chars) for the keyed one-way reporter code, HMAC-SHA256 (wrangler secret put REPORT_SALT). Rotate it any time; old codes then simply stop matching. */
   REPORT_SALT?: string;
 }
 
@@ -117,7 +117,7 @@ async function safeBrowsing(urls: string[], key: string | undefined): Promise<{ 
 /** One VirusTotal GET, cached for an hour (the free API allows only ~4 requests/minute). null = quota/outage. */
 async function vtGet(path: string, key: string): Promise<{ status: number; json: any } | null> {
   const cache = caches.default;
-  const cacheKey = new Request("https://vt-cache.safelink.invalid" + path);
+  const cacheKey = new Request("https://vt-cache.safelink.invalid/" + (await sha256Hex(path))); // hashed: the cache never holds the link itself
   const hit = await cache.match(cacheKey);
   if (hit) return { status: Number(hit.headers.get("x-vt-status")), json: await hit.json() };
   try {
@@ -210,6 +210,12 @@ async function sha256Hex(s: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+async function hmacHex(key: string, msg: string): Promise<string> {
+  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(msg));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 async function verifyTurnstile(token: unknown, secret: string, ip: string): Promise<boolean> {
   if (typeof token !== "string" || token.length === 0 || token.length > 2048) return false;
   try {
@@ -250,9 +256,13 @@ async function handleReport(request: Request, env: Env): Promise<Response> {
   if (!parsed.ok) return json({ error: parsed.error }, 400);
   const r = parsed.value;
 
-  // one-way hash so a person counts once per site per month; the IP itself is never stored
+  // keyed one-way code (HMAC-SHA256 with a secret) so a person counts once per site per month; the IP itself is never stored.
+  // A plain hash of an IPv4 address could be reversed by trying all ~4 billion addresses, the secret key prevents that.
+  // Without the secret there is no duplicate detection at all (a random code is stored), never a guessable one.
   const month = new Date().toISOString().slice(0, 7);
-  const reporter = await sha256Hex(ip + "|" + (env.REPORT_SALT ?? "safelink") + "|" + month);
+  const reporter = env.REPORT_SALT && env.REPORT_SALT.length >= 16
+    ? await hmacHex(env.REPORT_SALT, ip + "|" + month)
+    : crypto.randomUUID();
 
   try {
     const res = await env.DB.prepare(
@@ -286,6 +296,7 @@ async function handleCheck(request: Request, env: Env): Promise<Response> {
 
   const start = parseInput(body.url);
   if (!start) return json({ error: "invalid url" }, 400);
+  start.search = ""; start.hash = ""; // personal tokens often live in the query string; the address and path are enough to check
 
   const redirects = await followRedirects(start);
   const last = redirects.chain.at(-1);
@@ -341,10 +352,11 @@ async function handlePreview(request: Request, env: Env): Promise<Response> {
   if (typeof body?.url !== "string") return json({ error: "missing url" }, 400);
   const target = parseInput(body.url);
   if (!target || blockedReason(target)) return json({ error: "not previewable" }, 400);
+  target.search = ""; target.hash = ""; // query strings and fragments often hold personal tokens: never needed for a preview
 
   // a screenshot we already took in the last hour is free
   const cache = caches.default;
-  const cacheKey = new Request("https://preview-cache.safelink.invalid/" + encodeURIComponent(target.href));
+  const cacheKey = new Request("https://preview-cache.safelink.invalid/" + (await sha256Hex(target.href)));
   const hit = await cache.match(cacheKey);
   if (hit) return json({ image: await hit.text(), cached: true });
 
@@ -393,6 +405,51 @@ async function handlePreview(request: Request, env: Env): Promise<Response> {
   }
 }
 
+/* ---------------- contact form (removal requests, mistakes, questions) ---------------- */
+
+async function handleContact(request: Request, env: Env): Promise<Response> {
+  if (request.method !== "POST") return json({ error: "use POST" }, 405);
+  if (!env.DB) return json({ error: "unavailable" }, 503);
+  const ip = request.headers.get("cf-connecting-ip") ?? "";
+  if (env.REPORT_LIMITER) {
+    const { success } = await env.REPORT_LIMITER.limit({ key: "contact:" + (ip || "unknown") });
+    if (!success) return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { "content-type": "application/json; charset=utf-8", "retry-after": "60", "cache-control": "no-store" } });
+  }
+  if (Number(request.headers.get("content-length") ?? 0) > 8192) return json({ error: "request too large" }, 413);
+  let body: any;
+  try { body = await request.json(); } catch { return json({ error: "invalid json" }, 400); }
+  if (typeof body?.website === "string" && body.website.length > 0) return json({ ok: true }); // honeypot
+  const p = sanitizeContact(body);
+  if (!p.ok) return json({ error: p.error }, 400);
+  try {
+    // whole-site daily cap so a bot network cannot fill the database
+    const since = Math.floor(Date.now() / 1000) - 86400;
+    const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM contact_requests WHERE created_at >= ?").bind(since).first<{ n: number }>();
+    if ((n?.n ?? 0) >= 200) return json({ error: "busy" }, 429);
+    await env.DB.prepare("INSERT INTO contact_requests (kind, message, contact, lang, created_at) VALUES (?, ?, ?, ?, ?)")
+      .bind(p.value.kind, p.value.message, p.value.contact || null, p.value.lang || null, Math.floor(Date.now() / 1000)).run();
+    return json({ ok: true });
+  } catch {
+    return json({ error: "could not save" }, 500);
+  }
+}
+
+/* ---------------- public "recently reported" list ---------------- */
+
+/** Only sites reported by 3+ different people in the last 30 days, host and count only (no notes, no full links).
+ *  The admin can delete a site's reports to remove it. Cached 10 minutes. */
+async function handleRecent(env: Env): Promise<Response> {
+  const headers = { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=600", "x-content-type-options": "nosniff" };
+  if (!env.DB) return new Response(JSON.stringify({ items: [] }), { headers });
+  try {
+    const since = Math.floor(Date.now() / 1000) - 30 * 86400;
+    const rows = await env.DB.prepare("SELECT host, COUNT(DISTINCT reporter) AS n, MAX(created_at) AS last FROM reports WHERE created_at >= ? GROUP BY host HAVING n >= 3 ORDER BY last DESC LIMIT 20").bind(since).all<{ host: string; n: number; last: number }>();
+    return new Response(JSON.stringify({ items: rows.results }), { headers });
+  } catch {
+    return new Response(JSON.stringify({ items: [] }), { headers });
+  }
+}
+
 /* ---------------- admin API (token protected) ---------------- */
 
 async function sha256Bytes(s: string): Promise<Uint8Array> {
@@ -428,7 +485,22 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
       ]);
       return adminJson({ total: total?.n ?? 0, items: items.results, topHosts: top.results });
     }
-    let mm = /^\/reports\/(\d{1,12})$/.exec(path);
+    if (request.method === "GET" && path === "/export.csv") {
+      const rows = await env.DB.prepare("SELECT id, created_at, host, url, category, lang, note FROM reports ORDER BY id DESC LIMIT 20000").all<Record<string, unknown>>();
+      const lines = [csvRow(["id", "created_utc", "host", "url", "category", "lang", "note"])];
+      for (const r of rows.results) lines.push(csvRow([r.id, new Date(Number(r.created_at) * 1000).toISOString(), r.host, r.url, r.category, r.lang, r.note]));
+      return new Response("﻿" + lines.join("\r\n") + "\r\n", { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="safelink-reports.csv"', "cache-control": "no-store", "x-robots-tag": "noindex, nofollow", "x-content-type-options": "nosniff" } });
+    }
+    if (request.method === "GET" && path === "/contact") {
+      const rows = await env.DB.prepare("SELECT id, kind, message, contact, lang, created_at FROM contact_requests ORDER BY id DESC LIMIT 100").all();
+      return adminJson({ items: rows.results });
+    }
+    let mm = /^\/contact\/(\d{1,12})$/.exec(path);
+    if (request.method === "DELETE" && mm) {
+      const r = await env.DB.prepare("DELETE FROM contact_requests WHERE id = ?").bind(Number(mm[1])).run();
+      return adminJson({ ok: true, deleted: r.meta?.changes ?? 0 });
+    }
+    mm = /^\/reports\/(\d{1,12})$/.exec(path);
     if (request.method === "DELETE" && mm) {
       const r = await env.DB.prepare("DELETE FROM reports WHERE id = ?").bind(Number(mm[1])).run();
       return adminJson({ ok: true, deleted: r.meta?.changes ?? 0 });
@@ -450,6 +522,8 @@ export default {
     if (pathname === "/api/check") return handleCheck(request, env);
     if (pathname === "/api/report") return handleReport(request, env);
     if (pathname === "/api/preview") return handlePreview(request, env);
+    if (pathname === "/api/contact") return handleContact(request, env);
+    if (pathname === "/api/recent" && request.method === "GET") return handleRecent(env);
     if (pathname.startsWith("/api/admin/")) return handleAdmin(request, env, new URL(request.url));
     if (pathname.startsWith("/api/")) return json({ error: "not found" }, 404);
     return env.ASSETS.fetch(request);

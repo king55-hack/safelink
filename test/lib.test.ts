@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { blockedReason, parseInput, parseRdap, registrableDomain } from "../src/lib.ts";
+import { blockedReason, parseInput, parseRdap, registrableDomain, csvCell, csvRow, sanitizeContact } from "../src/lib.ts";
 
 test("registrableDomain", () => {
   assert.equal(registrableDomain("a.b.example.com"), "example.com");
@@ -135,4 +135,21 @@ test("preview skips heavy resource types", () => {
   assert.ok((PREVIEW_SKIP_TYPES as readonly string[]).includes("media"));
   assert.ok(!(PREVIEW_SKIP_TYPES as readonly string[]).includes("document"));
   assert.ok(!(PREVIEW_SKIP_TYPES as readonly string[]).includes("image"));
+});
+
+test("csv cells are quoted and spreadsheet formulas are neutralised", () => {
+  assert.equal(csvCell("plain"), "plain");
+  assert.equal(csvCell('a,"b"'), '"a,""b"""');
+  assert.equal(csvCell("=HYPERLINK(\"http://evil\")"), "\"'=HYPERLINK(\"\"http://evil\"\")\"");
+  assert.equal(csvCell("+1"), "'+1");
+  assert.equal(csvCell(null), "");
+  assert.equal(csvRow([1, "a b", "x,y"]), '1,a b,"x,y"');
+});
+
+test("sanitizeContact validates the contact form", () => {
+  assert.equal(sanitizeContact({ kind: "removal", message: "Please remove example.com" }).ok, true);
+  assert.equal(sanitizeContact({ kind: "nope", message: "Please remove example.com" }).ok, false);
+  assert.equal(sanitizeContact({ kind: "question", message: "hi" }).ok, false);
+  const r = sanitizeContact({ kind: "mistake", message: "x".repeat(5000), contact: "a@b.c", lang: "ja" });
+  assert.ok(r.ok && r.value.message.length === 2000 && r.value.lang === "ja");
 });

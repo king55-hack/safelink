@@ -11,7 +11,7 @@ const s = html.indexOf("<script>");
 const js = html.slice(s + 8, html.indexOf("</script>", s));
 const code = js.slice(js.indexOf("const BRANDS"), js.indexOf("/* ---------- rendering"));
 type Result = { error?: boolean; verdict: string; findings: { sev: string; title: string }[] };
-const mod = new Function(code + "; return { analyze, extractLinks };")() as { analyze: (u: string) => Result; extractLinks: (t: string) => string[] };
+const mod = new Function(code + "; return { analyze, extractLinks, scanMessage };")() as { analyze: (u: string) => Result; extractLinks: (t: string) => string[]; scanMessage: (t: string) => { verdict: string; signals: { title: string }[] } };
 const analyze = mod.analyze;
 const extractLinks = mod.extractLinks;
 
@@ -88,4 +88,37 @@ test("every extracted link can be analysed", () => {
     const r = analyze(l);
     assert.ok(r.error || ["safe", "warn", "danger"].includes(r.verdict), l);
   }
+});
+
+const scan = mod.scanMessage;
+const titles = (t: string) => scan(t).signals.map((s) => s.title);
+
+test("scam messages are recognised (English, Nepali, Japanese)", () => {
+  const scams = [
+    "Dear customer, your eSewa account is blocked. Update KYC immediately: http://esewa-kyc.top/login",
+    "Congratulations! You have won a prize. Pay the processing fee to claim your reward.",
+    "Your parcel could not be delivered, confirm your address now http://yamato-redelivery.top",
+    "Please send us the OTP you received to verify your account urgently.",
+    "Install this app (AnyDesk) so our support can fix your bank account.",
+    "あなたのアカウントは停止されました。至急、本人確認をしてください http://mufg-bk-login.com",
+    "तपाईंको खाता अवरुद्ध भयो। तुरुन्त केवाईसी अपडेट गर्नुहोस् http://esewa-kyc.top",
+  ];
+  for (const m of scams) assert.notEqual(scan(m).verdict, "safe", m);
+  assert.equal(scan(scams[0]).verdict, "danger");
+});
+
+test("normal messages are not flagged", () => {
+  const fine = [
+    "Hi! Are we still meeting at 6pm? Here is the map https://www.google.com/maps",
+    "Your OTP is 482913. Do not share it with anyone.",
+    "आजको बैठक ५ बजे हो, जाऔँ है।",
+    "明日の会議は10時からです。資料はこちら https://github.com/king55-hack/safelink",
+  ];
+  for (const m of fine) assert.equal(scan(m).verdict, "safe", m + " -> " + titles(m).join(", "));
+});
+
+test("sender address checks", () => {
+  assert.ok(titles("From: PayPal Support <help@paypa1-secure.com> Please login").some((x) => /sender/i.test(x)));
+  assert.ok(titles("PayPal Support <paypalsupport@gmail.com> your account").some((x) => /sender|free email/i.test(x)));
+  assert.equal(scan("From: Alice <alice@example.org> lunch?").verdict, "safe");
 });

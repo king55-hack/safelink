@@ -41,6 +41,7 @@ npx wrangler d1 create safelink-reports     # then put the printed id into wrang
 npx wrangler d1 migrations apply DB --remote
 npx wrangler secret put SAFE_BROWSING_KEY   # optional: Google Safe Browsing API key
 npx wrangler secret put VIRUSTOTAL_KEY      # optional: VirusTotal API key
+npx wrangler secret put REPORT_SALT        # required for duplicate-report detection: any random 32+ chars (keyed HMAC, never a plain hash)
 npx wrangler secret put TURNSTILE_SECRET    # optional: Turnstile secret (and set TURNSTILE_SITE_KEY in public/index.html)
 npm run deploy
 ```
@@ -75,6 +76,23 @@ With `VIRUSTOTAL_KEY` set, the Worker asks VirusTotal what its security engines 
 ### Admin page
 
 `/admin/` lists, filters and deletes reports. It is protected by a secret token (`wrangler secret put ADMIN_TOKEN`, at least 16 random characters); without the secret the admin API answers 503. The token is sent as a Bearer header (kept in `sessionStorage` only), compared in constant time, and attempts are rate limited. For stronger protection put Cloudflare Access in front of `/admin/*` and `/api/admin/*`.
+
+## Message check, sender check and sharing
+
+- **Pasted messages** are scanned for scam wording (OTP/PIN requests, prizes, fees, account threats, KYC, urgency, "install this app", fake authorities) in English, Nepali and Japanese. This runs only in the browser; the text is never sent. Rules live in `MSG_RULES` in `public/index.html`, covered by tests.
+- **Sender addresses** (an email alone or inside a pasted message) are checked for look-alike domains, mismatched display names and "official" names on free mail.
+- **Why this score?** lists each warning with its points. **Share this result** draws a picture on the device (site name only).
+- **Recently reported** (`GET /api/recent`) shows only sites reported by 3+ different people in the last 30 days (host and count only, cached 10 minutes). Delete a site's reports in `/admin/` to remove it.
+- **Contact form** (`POST /api/contact`, table `contact_requests`, `migrations/0003_contact.sql`) replaces public GitHub issues for removal requests. Messages are listed in `/admin/`.
+- **CSV export** of reports: "Download CSV" in `/admin/` (formula characters are neutralised).
+- **CI**: `.github/workflows/ci.yml` runs typecheck and tests on every push and pull request.
+
+## Privacy choices in the code
+
+- Query strings and fragments are stripped before a link is sent to the server (client and server side).
+- Cache keys for VirusTotal answers and previews are SHA-256 hashes, never the link itself.
+- Reporter codes are HMAC-SHA256 with the `REPORT_SALT` secret (IP + month). Without the secret a random value is stored, so nothing guessable is ever written. Changing the secret rotates all codes.
+- The server never downloads page bodies, follows at most 8 redirects, uses 4-5 s timeouts, refuses IP literals, credentials, non-standard ports and private names, and is rate limited per IP (`/api/check`, `/api/preview`, `/api/report`, `/api/contact`, admin).
 
 ## Phone, sharing and history
 

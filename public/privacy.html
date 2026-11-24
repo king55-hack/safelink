@@ -32,6 +32,12 @@
   th,td{border:1px solid var(--line);padding:8px 10px;text-align:start;vertical-align:top}
   th{background:var(--accent-tint)}
   .note{background:var(--accent-tint);border:1px solid #bfe4ea;border-radius:12px;padding:12px 14px;margin:14px 0}
+  form.contact{margin:12px 0 0}
+  form.contact label{display:block;font-weight:600;font-size:.9rem;margin:12px 0 4px}
+  form.contact select,form.contact textarea,form.contact input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;background:var(--surface);color:var(--ink)}
+  form.contact button{margin-top:12px;border:0;border-radius:10px;padding:10px 20px;font:inherit;font-weight:650;background:var(--accent);color:#fff;cursor:pointer}
+  form.contact .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0}
+  .cmsg{font-weight:600;min-height:1.3em}
   [data-lang]{display:none}
   [data-lang].on{display:block}
   .back{display:inline-block;margin:6px 0 0;font-weight:600;text-decoration:none}
@@ -75,12 +81,13 @@
       </ul>
     </li>
     <li><strong>Safe preview (only if you press the button):</strong> our server opens the link in a remote Cloudflare browser (Browser Rendering) and sends you just a screenshot. Nothing from the site runs on your device. The screenshot is kept in a cache for up to an hour so repeated requests are quick.</li>
-    <li><strong>We do not keep a record of the links you check.</strong> Answers from the services above may be cached for up to a few hours (under a key made from the link or domain) to save quota and time; they expire automatically.</li>
+    <li><strong>Message check:</strong> when you paste a whole text message, its wording is analysed only on your device and the text is never sent. Only a link you choose to check is sent to our server.</li>
+    <li><strong>We do not store a list of the links you check.</strong> Before the deeper check, anything after “?” or “#” is removed from the link. Answers from the services above may be cached for up to a few hours under a hashed key (a scrambled code made from the link or domain) to save quota and time; they expire automatically. The link travels in the request body, not in the page address, but our host, Cloudflare, may keep ordinary server logs (technical details of requests).</li>
   </ul>
 
   <h2>Reporting a scam</h2>
-  <p>If you use "Report a scam" we save: the link <em>without</em> anything after “?” or “#” (and without any username or password), the category you chose, your optional note, your language, the time, and a one-way scrambled code made from your connection and the month. Your IP address itself is never saved; the code only stops one person from reporting the same site many times. Please don't put personal details in the note.</p>
-  <p>Reports are not shown publicly. They are used to show "Reported by other users" (a count only) on checks of the same site, and may be reviewed and deleted by the operator. To have a report removed, open an issue (see Contact) naming the link. The form is protected from bots by Cloudflare Turnstile.</p>
+  <p>If you use "Report a scam" we save: the link <em>without</em> anything after “?” or “#” (and without any username or password), the category you chose, your optional note, your language, the time, and a one-way hash code made from your connection and the month, using a secret key that stays on the server. Your IP address itself is never saved, and without that key the code cannot be turned back into an address; it only stops one person from reporting the same site many times. Please don't put personal details in the note.</p>
+  <p>Reports are not shown publicly. They are used to show "Reported by other users" (a count only) on checks of the same site, and may be reviewed and deleted by the operator. To have a report removed, use the contact form below (see Contact), naming the link. The form is protected from bots by Cloudflare Turnstile.</p>
 
   <h2>Stored on your device</h2>
   <ul>
@@ -108,7 +115,22 @@
   <p>Cloudflare, our hosting provider, may log technical data for each request (such as IP address, time, page address and status) to run and debug the service. We do not use these logs to identify or profile people.</p>
 
   <h2>Open source and contact</h2>
-  <p>SafeLink's code is open source (MIT license): <a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>. For questions, mistakes in a result, or removal requests, please <a href="https://github.com/king55-hack/safelink/issues" rel="noopener">open an issue</a>.</p>
+  <p>SafeLink's code is open source (MIT license): <a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>. For questions, mistakes in a result, or removal requests, please use this form (no GitHub account needed).</p>
+  <form class="contact" novalidate>
+    <label>What is it about?
+      <select name="kind"><option value="removal">Remove a report about my site</option><option value="mistake">A result is wrong</option><option value="question">A question</option></select>
+    </label>
+    <label>Message (please name the link, and do not include passwords or card details)
+      <textarea name="message" rows="5" maxlength="2000"></textarea>
+    </label>
+    <label>Email or other way to reach you (optional, used only to reply)
+      <input type="text" name="contact" maxlength="200" autocomplete="off">
+    </label>
+    <div class="hp" aria-hidden="true"><label><span>Website</span> <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+    <p class="meta">No account needed. Your message is stored on our server only so we can answer it, and is deleted afterwards.</p>
+    <button type="submit">Send</button>
+    <p class="cmsg" role="status" data-ok="Thank you. We received your message." data-err="Could not send. Please try again later." data-short="Please write a little more."></p>
+  </form>
 </div>
 
 <!-- ======================= 日本語 ======================= -->
@@ -118,38 +140,39 @@
   <a class="back" href="./">← SafeLinkに戻る</a>
 
   <h2>SafeLinkとは</h2>
-  <p>SafeLinkは、リンクやQRコードに詐欺の兆候がないかを、わかりやすい言葉で説明する無料ツールです。リンク自体（そっくりな名前、不審なドメインの末尾、リダイレクト）、ドメインの年齢、ウェブサイトのセキュリティ証明書、既知の危険サイトのリストを調べます。</p>
+  <p>SafeLinkは、リンクやQRコードに詐欺の兆候がないかを、わかりやすい言葉で説明する無料ツールです。リンク自体（そっくりな名前、不審なドメインの末尾、リダイレクト）、ドメインの登録からの経過年数、ウェブサイトのセキュリティ証明書、既知の危険サイトのリストを調べます。</p>
   <div class="note"><strong>ご注意：</strong>リンクが安全または危険であると保証できるツールはありません。SafeLinkは判断の手がかりとなる警告サインを示すもので、誤りの可能性もあります。迷ったときはパスワードや支払い情報を入力せず、会社の公式サイトのアドレスを自分で入力してアクセスしてください。</div>
 
   <h2>リンクを確認するときの流れ</h2>
   <ul>
     <li><strong>ブラウザ内：</strong>リンクのアドレスと構造は、お使いの端末上で解析します。この段階では何も送信しません。</li>
-    <li><strong>詳細チェック：</strong>ブラウザがリンクをSafeLinkのサーバー（Cloudflare Workers）に送信します。サーバーは次の処理を行います。
+    <li><strong>詳細確認：</strong>ブラウザがリンクをSafeLinkのサーバー（Cloudflare Workers）に送信します。サーバーは次の処理を行います。
       <ul>
         <li>Cookieを付けずにリンクを開き、リダイレクトをたどります。確認先のサイトには、お使いの端末ではなくCloudflareのネットワークからのアクセスとして見えます。</li>
         <li>公開ドメイン登録情報（rdap.org経由）からドメインの登録日を取得します。</li>
-        <li><strong>Google セーフブラウジング</strong>と<strong>VirusTotal</strong>に、既知の危険リンクかどうかを照会します。</li>
-        <li><strong>CertSpotter（SSLMate）</strong>に、サイト名の公開証明書記録を照会します。</li>
+        <li><strong>Google セーフブラウジング</strong>と<strong>VirusTotal</strong>に、既知の危険リンクかどうかを確認します。</li>
+        <li><strong>CertSpotter（SSLMate）</strong>に、サイト名の公開証明書記録を確認します。</li>
         <li>SafeLinkに寄せられた報告の人数を数えます。</li>
       </ul>
     </li>
     <li><strong>安全なプレビュー（ボタンを押したときのみ）：</strong>当サーバーがCloudflareのリモートブラウザ（Browser Rendering）でリンクを開き、スクリーンショットだけをお送りします。サイトのコードがお使いの端末で実行されることはありません。スクリーンショットは、再リクエストを速くするため最大1時間キャッシュされます。</li>
-    <li><strong>確認したリンクの記録は残しません。</strong>上記サービスからの回答は、クォータ節約と高速化のため、リンクまたはドメインを元にしたキーで最大数時間キャッシュされ、自動的に消えます。</li>
+    <li><strong>メッセージの確認：</strong>メッセージ全文を貼り付けた場合、文面はお使いの端末上でのみ解析され、送信されることはありません。確認を押したリンクだけが当サーバーに送信されます。</li>
+    <li><strong>確認したリンクの一覧は保存しません。</strong>「?」「#」以降は、詳細確認の前に取り除かれます。上記サービスからの回答は、クォータ節約と高速化のため、リンクまたはドメインのハッシュ値をキーにして最大数時間キャッシュされ、自動的に消えます。なお、ホスティング元のCloudflareが通常のサーバーログにアクセス先を記録することがあります。</li>
   </ul>
 
   <h2>詐欺の報告</h2>
-  <p>「詐欺を報告」を使うと、次の情報を保存します：リンク（「?」「#」以降、ユーザー名・パスワードは除く）、選択した種類、任意のメモ、言語、時刻、そして接続元と月から作った元に戻せない変換コード。IPアドレス自体は保存しません。変換コードは、同じ人が同じサイトを何度も報告することを防ぐためだけに使います。メモに個人情報は書かないでください。</p>
-  <p>報告は公開されません。同じサイトを確認したときに「他のユーザーから報告があります」（人数のみ）を表示するために使い、運営者が確認・削除することがあります。報告の削除を希望する場合は、リンクを添えてIssueを作成してください（連絡先参照）。フォームはCloudflare Turnstileでボットから保護されています。</p>
+  <p>「詐欺を報告」を使うと、次の情報を保存します：リンク（「?」「#」以降、ユーザー名・パスワードは除く）、選択した種類、任意のメモ、言語、時刻、そして接続元と月から作ったハッシュ値（秘密の鍵で作った、元に戻せない変換コード）。IPアドレス自体は保存しません。このコードは、同じ人が同じサイトを何度も報告することを防ぐためだけに使います。メモに個人情報は書かないでください。</p>
+  <p>報告は公開されません。同じサイトを確認したときに「他のユーザーから報告があります」（人数のみ）を表示するために使い、運営者が確認・削除することがあります。報告の削除を希望する場合は、リンクを添えて、下の連絡フォームからご連絡ください（連絡先参照）。フォームはCloudflare Turnstileでボットから保護されています。</p>
 
   <h2>お使いの端末に保存されるもの</h2>
   <ul>
-    <li><strong>最近の確認</strong>（サイト名とパスのみ、クエリ文字列なし、最新20件）：ブラウザ内にのみ保存され、当方には送信されません。ページ上の「履歴を消去」「保存を停止」でいつでも削除・停止できます。</li>
+    <li><strong>最近確認したリンク</strong>（サイト名とパスのみ、クエリ文字列なし、最新20件）：ブラウザ内にのみ保存され、当方には送信されません。ページ上の「履歴を消去」「保存を停止」でいつでも削除・停止できます。</li>
     <li>読み込み済みの<strong>翻訳</strong>（次回の表示を速くするため）。</li>
     <li>SafeLinkは追跡Cookie、アクセス解析、広告を使用しません。Cloudflare Turnstile（報告フォームのみ）は独自のCookieやストレージを使う場合があります。</li>
   </ul>
 
   <h2>言語</h2>
-  <p>英語・ネパール語・日本語は内蔵されています。それ以外の言語を選ぶと、ページの文章がお使いのブラウザから直接Google翻訳またはMyMemoryで翻訳されます。この文章には、結果に含まれるドメイン名が含まれることがあります。</p>
+  <p>英語・ネパール語・日本語は内蔵されています。それ以外の言語を選ぶと、ページの文章がお使いのブラウザから直接Google 翻訳またはMyMemoryで翻訳されます。この文章には、結果に含まれるドメイン名が含まれることがあります。</p>
 
   <h2>QRコードとカメラ</h2>
   <p>QRコードはお使いの端末上（カメラまたはアップロードした写真）で読み取ります。画像がアップロードされることはありません。</p>
@@ -162,47 +185,63 @@
     <tr><td>VirusTotal</td><td>セキュリティベンダーの判定</td><td><a href="https://support.virustotal.com/hc/en-us/articles/115002168385-Privacy-Policy" rel="noopener">VirusTotal プライバシーポリシー</a></td></tr>
     <tr><td>CertSpotter（SSLMate）</td><td>公開証明書の記録</td><td><a href="https://sslmate.com/privacy" rel="noopener">sslmate.com/privacy</a></td></tr>
     <tr><td>rdap.org</td><td>ドメインの登録日</td><td><a href="https://about.rdap.org/" rel="noopener">about.rdap.org</a></td></tr>
-    <tr><td>Google翻訳、MyMemory</td><td>その他の言語（ブラウザから）</td><td><a href="https://mymemory.translated.net/doc/privacy.php" rel="noopener">MyMemory プライバシー</a></td></tr>
+    <tr><td>Google 翻訳、MyMemory</td><td>その他の言語（ブラウザから）</td><td><a href="https://mymemory.translated.net/doc/privacy.php" rel="noopener">MyMemory プライバシー</a></td></tr>
   </table>
   <p>ホスティング事業者のCloudflareは、サービスの運用とデバッグのため、リクエストごとの技術情報（IPアドレス、時刻、ページのアドレス、ステータスなど）を記録することがあります。当方はこのログを個人の特定やプロファイリングに使用しません。</p>
 
   <h2>オープンソースと連絡先</h2>
-  <p>SafeLinkのコードはオープンソース（MITライセンス）です：<a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>。ご質問、結果の誤り、削除のご依頼は<a href="https://github.com/king55-hack/safelink/issues" rel="noopener">Issue</a>からお知らせください。</p>
+  <p>SafeLinkのコードはオープンソース（MITライセンス）です：<a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>。ご質問、結果の誤り、削除のご依頼は、下のフォームからお知らせください（GitHubアカウントは不要です）。</p>
+  <form class="contact" novalidate>
+    <label>ご用件
+      <select name="kind"><option value="removal">サイトに関する報告の削除</option><option value="mistake">結果が間違っている</option><option value="question">質問</option></select>
+    </label>
+    <label>メッセージ（リンクを明記してください。パスワードやカード情報は書かないでください）
+      <textarea name="message" rows="5" maxlength="2000"></textarea>
+    </label>
+    <label>メールアドレスなどの連絡先（任意・返信のためだけに使います）
+      <input type="text" name="contact" maxlength="200" autocomplete="off">
+    </label>
+    <div class="hp" aria-hidden="true"><label><span>ウェブサイト</span> <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+    <p class="meta">アカウントは不要です。メッセージは返信のためだけに当サーバーに保存され、対応後に削除されます。</p>
+    <button type="submit">送信</button>
+    <p class="cmsg" role="status" data-ok="ありがとうございます。メッセージを受け取りました。" data-err="送信できませんでした。後でもう一度お試しください。" data-short="もう少し詳しく書いてください。"></p>
+  </form>
 </div>
 
 <!-- ======================= नेपाली ======================= -->
 <div data-lang="ne" lang="ne">
-  <h1>गोपनीयता र बारेमा</h1>
+  <h1>गोपनीयता र हाम्रो बारेमा</h1>
   <p class="meta">पछिल्लो अद्यावधिक: 2026-11-18। यो पृष्ठले SafeLink ले अहिले के गर्छ भनेर वर्णन गर्छ; केही परिवर्तन भए यो अद्यावधिक गरिन्छ।</p>
   <a class="back" href="./">← SafeLink मा फर्कनुहोस्</a>
 
   <h2>SafeLink भनेको के हो</h2>
-  <p>SafeLink एउटा निःशुल्क उपकरण हो जसले लिङ्क वा QR कोड जाँचेर त्यसमा ठगीका सङ्केत छन् कि छैनन् भनी सजिलो भाषामा बुझाउँछ। यसले लिङ्क आफैँ (मिल्दोजुल्दो नाम, अनौठो अन्त्य, रिडाइरेक्ट), डोमेनको उमेर, वेबसाइटको सुरक्षा प्रमाणपत्र र ज्ञात खतरनाक साइटका सूची हेर्छ।</p>
-  <div class="note"><strong>महत्त्वपूर्ण:</strong> कुनै पनि उपकरणले लिङ्क सुरक्षित वा खतरनाक छ भनी ग्यारेन्टी दिन सक्दैन। SafeLink ले निर्णय गर्न मद्दत गर्ने चेतावनीका सङ्केत मात्र दिन्छ; यो गलत हुन सक्छ। शङ्का लागे पासवर्ड वा भुक्तानी विवरण नहाल्नुहोस्, र कम्पनीको आधिकारिक साइटको ठेगाना आफैँ टाइप गरेर जानुहोस्।</div>
+  <p>SafeLink एउटा निःशुल्क टूल हो जसले लिङ्क वा QR कोड जाँचेर त्यसमा ठगीका सङ्केत छन् कि छैनन् भनी सजिलो भाषामा बुझाउँछ। यसले लिङ्क आफैँ (मिल्दोजुल्दो नाम, अनौठो अन्त्य, रिडाइरेक्ट), डोमेनको उमेर, वेबसाइटको सुरक्षा प्रमाणपत्र र ज्ञात खतरनाक साइटहरूको सूची हेर्छ।</p>
+  <div class="note"><strong>महत्त्वपूर्ण:</strong> कुनै पनि टूलले लिङ्क सुरक्षित वा खतरनाक छ भनी ग्यारेन्टी दिन सक्दैन। SafeLink ले निर्णय गर्न मद्दत गर्ने चेतावनीका सङ्केत मात्र दिन्छ; यो गलत हुन सक्छ। शङ्का लागे पासवर्ड वा भुक्तानी विवरण नहाल्नुहोस्, र कम्पनीको आधिकारिक साइटको ठेगाना आफैँ टाइप गरेर जानुहोस्।</div>
 
   <h2>लिङ्क जाँच्दा के हुन्छ</h2>
   <ul>
-    <li><strong>तपाईंको ब्राउजरमा:</strong> लिङ्कको ठेगाना र बनोट तपाईंकै उपकरणमा विश्लेषण गरिन्छ। यो चरणमा केही पठाइँदैन।</li>
+    <li><strong>तपाईंको ब्राउजरमा:</strong> लिङ्कको ठेगाना र बनोट तपाईंकै डिभाइसमा विश्लेषण गरिन्छ। यो चरणमा केही पठाइँदैन।</li>
     <li><strong>थप गहिरो जाँच:</strong> तपाईंको ब्राउजरले लिङ्क SafeLink को सर्भर (Cloudflare Workers) मा पठाउँछ। सर्भरले:
       <ul>
-        <li>तपाईंको कुकी बिना लिङ्क खोलेर रिडाइरेक्ट पछ्याउँछ। त्यसैले जाँचिएको वेबसाइटले तपाईंको उपकरण होइन, Cloudflare को नेटवर्कबाट अनुरोध देख्छ;</li>
+        <li>तपाईंको कुकी बिना लिङ्क खोलेर रिडाइरेक्ट पछ्याउँछ। त्यसैले जाँचिएको वेबसाइटले तपाईंको डिभाइस होइन, Cloudflare को नेटवर्कबाट अनुरोध देख्छ;</li>
         <li>सार्वजनिक डोमेन रजिस्ट्री (rdap.org मार्फत) बाट डोमेन कहिले दर्ता भयो भनी सोध्छ;</li>
         <li><strong>Google Safe Browsing</strong> र <strong>VirusTotal</strong> लाई यो लिङ्क खतरनाक भनी चिनिएको छ कि छैन सोध्छ;</li>
         <li><strong>CertSpotter (SSLMate)</strong> लाई साइटको नामको सार्वजनिक प्रमाणपत्र अभिलेख सोध्छ;</li>
         <li>कति जनाले SafeLink मा यो साइट रिपोर्ट गरे भनी गन्छ।</li>
       </ul>
     </li>
-    <li><strong>सुरक्षित पूर्वावलोकन (बटन थिच्दा मात्र):</strong> हाम्रो सर्भरले लिङ्क Cloudflare को रिमोट ब्राउजर (Browser Rendering) मा खोलेर तपाईंलाई स्क्रिनसट मात्र पठाउँछ। साइटको केही पनि तपाईंको उपकरणमा चल्दैन। बारम्बार अनुरोध छिटो होस् भनेर स्क्रिनसट एक घण्टासम्म क्यासमा राखिन्छ।</li>
-    <li><strong>तपाईंले जाँचेका लिङ्कको अभिलेख हामी राख्दैनौं।</strong> माथिका सेवाहरूका जवाफ कोटा र समय जोगाउन लिङ्क वा डोमेनबाट बनेको कुञ्जीमा केही घण्टासम्म क्यास हुन सक्छन्; ती आफैँ मेटिन्छन्।</li>
+    <li><strong>सुरक्षित पूर्वावलोकन (बटन थिच्दा मात्र):</strong> हाम्रो सर्भरले लिङ्क Cloudflare को रिमोट ब्राउजर (Browser Rendering) मा खोलेर तपाईंलाई स्क्रिनसट मात्र पठाउँछ। साइटको केही पनि तपाईंको डिभाइसमा चल्दैन। बारम्बार अनुरोध छिटो होस् भनेर स्क्रिनसट एक घण्टासम्म क्यासमा राखिन्छ।</li>
+    <li><strong>मेसेज जाँच:</strong> तपाईंले पूरा मेसेज टाँस्दा त्यसको पाठ तपाईंकै डिभाइसमा मात्र विश्लेषण हुन्छ र कहिल्यै पठाइँदैन। तपाईंले जाँच्न छानेको लिङ्क मात्र हाम्रो सर्भरमा पठाइन्छ।</li>
+    <li><strong>तपाईंले जाँचेका लिङ्कको सूची हामी भण्डारण गर्दैनौं।</strong> थप जाँचअघि “?” वा “#” पछिको भाग हटाइन्छ। माथिका सेवाहरूका जवाफ कोटा र समय जोगाउन लिङ्क वा डोमेनबाट बनेको (हाश गरिएको) कुञ्जीमा केही घण्टासम्म क्यास हुन सक्छन्; ती आफैँ मेटिन्छन्। हाम्रो होस्ट Cloudflare ले सामान्य सर्भर लगमा अनुरोधको ठेगाना राख्न सक्छ।</li>
   </ul>
 
   <h2>ठगी रिपोर्ट गर्दा</h2>
-  <p>“ठगी रिपोर्ट गर्नुहोस्” प्रयोग गर्दा हामी यी सुरक्षित गर्छौं: “?” वा “#” पछिको भाग र प्रयोगकर्ता नाम/पासवर्ड बिनाको लिङ्क, तपाईंले छानेको प्रकार, ऐच्छिक टिपोट, भाषा, समय, र तपाईंको जडान र महिनाबाट बनेको एकतर्फी स्क्र्याम्बल गरिएको कोड। तपाईंको IP ठेगाना आफैँ कहिल्यै सुरक्षित गरिँदैन; त्यो कोडले एउटै व्यक्तिले एउटै साइट धेरै पटक रिपोर्ट गर्न मात्र रोक्छ। कृपया टिपोटमा व्यक्तिगत विवरण नराख्नुहोस्।</p>
-  <p>रिपोर्टहरू सार्वजनिक रूपमा देखाइँदैनन्। ती एउटै साइटको जाँचमा “अन्य प्रयोगकर्ताले रिपोर्ट गरेको” (सङ्ख्या मात्र) देखाउन प्रयोग हुन्छन्, र सञ्चालकले हेर्न र मेटाउन सक्छन्। रिपोर्ट हटाउन लिङ्क उल्लेख गरी Issue खोल्नुहोस् (सम्पर्क हेर्नुहोस्)। फारम Cloudflare Turnstile ले बोटबाट जोगाएको छ।</p>
+  <p>“ठगी रिपोर्ट गर्नुहोस्” प्रयोग गर्दा हामी यी सेभ गर्छौं: “?” वा “#” पछिको भाग र प्रयोगकर्ता नाम/पासवर्ड बिनाको लिङ्क, तपाईंले छानेको प्रकार, ऐच्छिक टिपोट, भाषा, समय, र तपाईंको जडान र महिनाबाट गोप्य कुञ्जीले बनाइएको हाश (एकतर्फी) कोड। तपाईंको IP ठेगाना आफैँ कहिल्यै सेभ गरिँदैन; त्यो कोड एउटै व्यक्तिले एउटै साइट धेरै पटक रिपोर्ट गर्नबाट रोक्न मात्र प्रयोग हुन्छ। कृपया टिपोटमा व्यक्तिगत विवरण नराख्नुहोस्।</p>
+  <p>रिपोर्टहरू सार्वजनिक रूपमा देखाइँदैनन्। ती एउटै साइटको जाँचमा “अन्य प्रयोगकर्ताले रिपोर्ट गरेको” (सङ्ख्या मात्र) देखाउन प्रयोग हुन्छन्, र सञ्चालकले हेर्न र मेटाउन सक्छन्। रिपोर्ट हटाउन लिङ्क उल्लेख गरी तलको सम्पर्क फारम प्रयोग गर्नुहोस् (सम्पर्क हेर्नुहोस्)। फारम Cloudflare Turnstile ले बोटबाट जोगाएको छ।</p>
 
-  <h2>तपाईंको उपकरणमा के सुरक्षित हुन्छ</h2>
+  <h2>तपाईंको डिभाइसमा के राखिन्छ</h2>
   <ul>
-    <li><strong>हालका जाँचहरू</strong> (साइटको नाम र पथ मात्र, क्वेरी बिना; पछिल्ला २०): तपाईंको ब्राउजरमा मात्र सुरक्षित हुन्छ, हामीलाई कहिल्यै पठाइँदैन। पृष्ठमा “इतिहास मेटाउनुहोस्” वा “सुरक्षित गर्न बन्द गर्नुहोस्” कुनै पनि बेला प्रयोग गर्नुहोस्।</li>
+    <li><strong>हालैका जाँचहरू</strong> (साइटको नाम र पथ मात्र, क्वेरी बिना; पछिल्ला २०): तपाईंको ब्राउजरमा मात्र राखिन्छ, हामीलाई कहिल्यै पठाइँदैन। पृष्ठमा “इतिहास मेटाउनुहोस्” वा “सेभ गर्न बन्द गर्नुहोस्” कुनै पनि बेला प्रयोग गर्नुहोस्।</li>
     <li>पहिले नै लोड भएका <strong>अनुवाद</strong>, ताकि अर्को पटक पृष्ठ छिटो खुलोस्।</li>
     <li>SafeLink ले ट्र्याकिङ कुकी, एनालिटिक्स वा विज्ञापन प्रयोग गर्दैन। Cloudflare Turnstile (रिपोर्ट फारममा मात्र) ले आफ्नै कुकी वा स्टोरेज प्रयोग गर्न सक्छ।</li>
   </ul>
@@ -211,7 +250,7 @@
   <p>अङ्ग्रेजी, नेपाली र जापानी भित्रै बनेका छन्। अर्को भाषा छान्दा पृष्ठको पाठ तपाईंको ब्राउजरबाटै सिधै Google Translate वा MyMemory ले अनुवाद गर्छ। त्यस पाठमा तपाईंको नतिजामा देखिएका डोमेन नाम पर्न सक्छन्।</p>
 
   <h2>QR कोड र क्यामेरा</h2>
-  <p>QR कोड तपाईंकै उपकरणमा (क्यामेरा वा अपलोड गरिएको फोटो) पढिन्छ। तस्बिर कहिल्यै अपलोड गरिँदैन।</p>
+  <p>QR कोड तपाईंकै डिभाइसमा (क्यामेरा वा अपलोड गरिएको फोटो) पढिन्छ। तस्बिर कहिल्यै अपलोड गरिँदैन।</p>
 
   <h2>हामीले प्रयोग गर्ने सेवाहरू</h2>
   <table>
@@ -226,7 +265,22 @@
   <p>हाम्रो होस्टिङ प्रदायक Cloudflare ले सेवा चलाउन र त्रुटि खोज्न प्रत्येक अनुरोधको प्राविधिक विवरण (जस्तै IP ठेगाना, समय, पृष्ठको ठेगाना र स्थिति) लग गर्न सक्छ। हामी यी लग मानिस चिन्न वा प्रोफाइल बनाउन प्रयोग गर्दैनौं।</p>
 
   <h2>ओपन सोर्स र सम्पर्क</h2>
-  <p>SafeLink को कोड ओपन सोर्स (MIT लाइसेन्स) हो: <a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>। प्रश्न, नतिजामा गल्ती वा हटाउने अनुरोधका लागि कृपया <a href="https://github.com/king55-hack/safelink/issues" rel="noopener">Issue खोल्नुहोस्</a>।</p>
+  <p>SafeLink को कोड ओपन सोर्स (MIT लाइसेन्स) हो: <a href="https://github.com/king55-hack/safelink" rel="noopener">github.com/king55-hack/safelink</a>। प्रश्न, नतिजामा गल्ती वा हटाउने अनुरोधका लागि कृपया तलको फारम प्रयोग गर्नुहोस् (GitHub खाता चाहिँदैन)।</p>
+  <form class="contact" novalidate>
+    <label>के बारेमा हो?
+      <select name="kind"><option value="removal">मेरो साइटबारे गरिएको रिपोर्ट हटाउन</option><option value="mistake">नतिजा गलत छ</option><option value="question">प्रश्न</option></select>
+    </label>
+    <label>सन्देश (कृपया लिङ्क उल्लेख गर्नुहोस्; पासवर्ड वा कार्ड विवरण नलेख्नुहोस्)
+      <textarea name="message" rows="5" maxlength="2000"></textarea>
+    </label>
+    <label>इमेल वा सम्पर्कको अर्को तरिका (ऐच्छिक, जवाफ दिन मात्र प्रयोग हुन्छ)
+      <input type="text" name="contact" maxlength="200" autocomplete="off">
+    </label>
+    <div class="hp" aria-hidden="true"><label><span>वेबसाइट</span> <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+    <p class="meta">खाता चाहिँदैन। तपाईंको सन्देश जवाफ दिन मात्र हाम्रो सर्भरमा राखिन्छ, र त्यसपछि मेटिन्छ।</p>
+    <button type="submit">पठाउनुहोस्</button>
+    <p class="cmsg" role="status" data-ok="धन्यवाद। हामीले तपाईंको सन्देश पायौं।" data-err="पठाउन सकिएन। कृपया पछि फेरि प्रयास गर्नुहोस्।" data-short="कृपया अलि बढी लेख्नुहोस्।"></p>
+  </form>
 </div>
 
 </main></div>
@@ -234,7 +288,7 @@
 <script>
 (function(){
   var blocks=document.querySelectorAll("[data-lang]"), btns=document.querySelectorAll("[data-pick]");
-  var titles={en:"Privacy & About — SafeLink",ja:"プライバシーと概要 — SafeLink",ne:"गोपनीयता र बारेमा — SafeLink"};
+  var titles={en:"Privacy & About — SafeLink",ja:"プライバシーと概要 — SafeLink",ne:"गोपनीयता र हाम्रो बारेमा — SafeLink"};
   function pick(l){
     if(!titles[l]) l="en";
     blocks.forEach(function(b){b.classList.toggle("on",b.getAttribute("data-lang")===l);});
@@ -242,8 +296,23 @@
     document.documentElement.lang=l; document.title=titles[l];
   }
   btns.forEach(function(b){b.addEventListener("click",function(){pick(b.getAttribute("data-pick"));});});
+  var saved=""; try{saved=localStorage.getItem("sl_lang")||"";}catch(e){}
+  btns.forEach(function(b){b.addEventListener("click",function(){try{localStorage.setItem("sl_lang",b.getAttribute("data-pick"));}catch(e){}});});
   var q=new URLSearchParams(location.search).get("lang"), nav=(navigator.language||"en").slice(0,2);
-  pick(q||(nav==="ja"||nav==="ne"?nav:"en"));
+  pick(q||(titles[saved]?saved:(nav==="ja"||nav==="ne"?nav:"en")));
+
+  document.querySelectorAll("form.contact").forEach(function(f){
+    f.addEventListener("submit",function(e){
+      e.preventDefault();
+      var msg=f.querySelector(".cmsg"), btn=f.querySelector("button");
+      var body={kind:f.kind.value,message:f.message.value,contact:f.contact.value,website:f.website.value,lang:document.documentElement.lang};
+      if(body.message.trim().length<5){ msg.textContent=msg.getAttribute("data-short"); return; }
+      btn.disabled=true; msg.textContent="";
+      fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){
+        if(r.ok){ msg.textContent=msg.getAttribute("data-ok"); f.message.value=""; } else msg.textContent=msg.getAttribute("data-err");
+      }).catch(function(){ msg.textContent=msg.getAttribute("data-err"); }).then(function(){ btn.disabled=false; });
+    });
+  });
 })();
 </script>
 </body>

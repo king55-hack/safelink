@@ -161,3 +161,33 @@ export function allowPreviewRequest(rawUrl: string): boolean {
 
 /** Resource kinds the preview never needs (saves time and Cloudflare browser minutes). */
 export const PREVIEW_SKIP_TYPES = ["media", "font", "websocket", "eventsource", "manifest", "other"] as const;
+
+/* ---------------- CSV export ---------------- */
+
+/** One CSV cell. Quotes when needed and neutralises spreadsheet formulas (=, +, -, @) so an opened export cannot run code. */
+export function csvCell(v: unknown): string {
+  let s = v === null || v === undefined ? "" : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+export function csvRow(cells: unknown[]): string {
+  return cells.map(csvCell).join(",");
+}
+
+/* ---------------- contact form ---------------- */
+
+export const CONTACT_KINDS = ["removal", "mistake", "question"] as const;
+export type ContactKind = (typeof CONTACT_KINDS)[number];
+
+/** Validate a contact-form message. The optional contact detail is stored only so the operator can answer. */
+export function sanitizeContact(body: any): { ok: true; value: { kind: ContactKind; message: string; contact: string; lang: string } } | { ok: false; error: string } {
+  if (!body || typeof body !== "object") return { ok: false, error: "invalid body" };
+  const kind = CONTACT_KINDS.find((k) => k === body.kind);
+  if (!kind) return { ok: false, error: "invalid kind" };
+  const clean = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max) : "");
+  const message = clean(body.message, 2000);
+  if (message.length < 5) return { ok: false, error: "message too short" };
+  const contact = clean(body.contact, 200);
+  const lang = /^[a-zA-Z-]{2,8}$/.test(String(body.lang ?? "")) ? String(body.lang).slice(0, 8) : "";
+  return { ok: true, value: { kind, message, contact, lang } };
+}

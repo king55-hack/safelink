@@ -95,6 +95,7 @@
   .lang-item:hover{background:var(--accent-tint)}
   .lang-item.active{background:var(--ink);color:#fff}
   .lang-item small{color:var(--muted);font-size:.72rem}
+  .lang-sep{font-size:.72rem;color:var(--muted);padding:8px 10px 4px;border-top:1px solid var(--line);margin-top:4px}
   .lang-item.active small{color:#c9d6e6}
 
   /* ---------- hero ---------- */
@@ -240,6 +241,44 @@
   .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:sp .7s linear infinite;vertical-align:-2px;margin-inline-end:6px}
   @keyframes sp{to{transform:rotate(360deg)}}
 
+  /* message check, score breakdown, share, community list */
+  .msgbox{margin-top:14px;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surface)}
+  .msgbox[hidden],.recentbox[hidden]{display:none}
+  .msgbox.danger{border-color:var(--danger)}.msgbox.warn{border-color:var(--warn)}
+  .msgbox h2{font-family:var(--disp);font-size:1.05rem;margin:0 0 2px}
+  .msg-verdict{font-weight:700;font-size:.98rem;margin:0 0 6px}
+  .msgbox.danger .msg-verdict{color:var(--danger)}.msgbox.warn .msg-verdict{color:var(--warn)}.msgbox.safe .msg-verdict{color:var(--safe)}
+  .ft-extra{font-size:.82rem;color:var(--muted);margin-top:2px;word-break:break-all}
+  .msg-note{font-size:.8rem;color:var(--muted);margin:10px 0 0}
+  details.why{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+  details.why summary{cursor:pointer;font-weight:650;font-size:.92rem;color:var(--accent-dark)}
+  details.why ul{list-style:none;margin:8px 0 0;padding:0}
+  details.why li{display:flex;justify-content:space-between;gap:12px;font-size:.88rem;padding:4px 0;border-bottom:1px dashed var(--line)}
+  details.why li b{white-space:nowrap}
+  details.why p{font-size:.8rem;color:var(--muted);margin:8px 0 0}
+  .act-row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;border-top:1px solid var(--line);padding-top:10px;align-items:center}
+  .act-row a{color:var(--accent-dark);font-weight:600;font-size:.9rem}
+  .recentbox{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow)}
+  .recentbox h2{font-family:var(--disp);font-size:1.05rem;margin:0 0 2px}
+  .recentbox .hist-note{display:block;margin-bottom:8px}
+  .links-lbl{font-size:.78rem;font-weight:600;color:var(--muted);white-space:nowrap}
+
+  /* dark mode follows the device setting */
+  @media (prefers-color-scheme:dark){
+    :root{--ink:#e8eef7;--ink-soft:#bccadb;--canvas:#0d1624;--surface:#15233a;--line:#2a3b55;--muted:#93a4ba;--accent:#2aa9c3;--accent-dark:#6fd0e3;--accent-tint:#173446;--safe-tint:#12301f;--warn-tint:#3a2d12;--danger-tint:#3a1d22;--shadow:0 10px 30px -12px rgba(0,0,0,.6)}
+    body{background:radial-gradient(1100px 500px at 82% -8%,#12303b 0%,rgba(18,48,59,0) 60%),radial-gradient(900px 480px at -5% 8%,#14233f 0%,rgba(20,35,63,0) 55%),var(--canvas)}
+    .input-shell,.qr,.linksbox,.reportbox input[type=text],.reportbox select,.reportbox textarea,.lang-search{background:#0f1b2e;color:var(--ink)}
+    .chip{background:var(--surface)}
+    .notes{background:rgba(21,35,58,.7)}
+    .advice{border-color:var(--line)}
+    .pv-img{background:#0f1b2e}
+    #toast{background:#e8eef7;color:#0d1624}
+    .lang-item.active{background:var(--accent);color:#06121f}
+    .lang-item.active small{color:#0d2a3a}
+    .brand img{background:#fff;border-radius:10px;padding:2px 10px;height:50px}
+    .linkbtn:focus-visible,.btn:focus-visible{outline-color:var(--accent-dark)}
+  }
+
   @media (max-width:560px){
     .btn{flex:1 1 100%}
     .v-label{font-size:1.3rem}
@@ -270,7 +309,7 @@
 <main class="wrap">
   <section class="hero">
     <h1 data-i18n>Check if a link is safe before you click.</h1>
-    <p class="sub" data-i18n>Paste any link from an email or text message. SafeLink explains, in plain words, whether it looks safe — right here in your browser.</p>
+    <p class="sub" data-i18n>Paste any link from an email or text message. SafeLink explains, in plain words, whether it looks safe. The first check starts in your browser; deeper checks run on our server.</p>
 
     <div class="checker">
       <div class="field">
@@ -303,6 +342,7 @@
         <button class="chip" data-url="https://en.wikipedia.org/wiki/Phishing" data-i18n>Safe site</button>
       </div>
       <div class="hint" id="hint" data-i18n></div>
+      <div class="msgbox" id="msgBox" hidden aria-live="polite"></div>
       <div class="linksbox" id="linksBox" hidden>
         <p class="links-title" id="linksTitle" data-i18n>We found several links in your text. Choose one to check:</p>
         <ul class="links-list" id="linksList"></ul>
@@ -334,9 +374,9 @@
       </select>
       <label for="rpNote" data-i18n>Details (optional)</label>
       <textarea id="rpNote" maxlength="500" data-i18n-ph placeholder="What happened? Please don't include personal details."></textarea>
-      <div class="hp" aria-hidden="true"><label>Website <input type="text" id="rpWebsite" tabindex="-1" autocomplete="off"></label></div>
+      <div class="hp" aria-hidden="true"><label><span data-i18n>Website</span> <input type="text" id="rpWebsite" tabindex="-1" autocomplete="off"></label></div>
       <div id="rpTurnstile"></div>
-      <p class="rp-note" data-i18n>We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; a one-way scrambled code is used only to stop duplicate reports.</p>
+      <p class="rp-note" data-i18n>We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; only a one-way hash code (made with a secret key) is used to stop duplicate reports.</p>
       <div class="rp-actions">
         <button class="btn small" type="submit" id="rpSend" data-i18n>Send report</button>
         <button class="btn small ghost" type="button" id="rpCancel" data-i18n>Close</button>
@@ -352,14 +392,19 @@
       <button class="linkbtn" id="histToggle" type="button" data-i18n>Stop saving</button>
     </div>
   </section>
+  <section id="recentBox" class="recentbox" hidden aria-labelledby="recentTitle">
+    <h2 id="recentTitle" data-i18n>Recently reported by the community</h2>
+    <span class="hist-note" data-i18n>Shown only when 3 or more different people reported the same site in the last 30 days. Always double-check before trusting a list.</span>
+    <ul class="hist-list" id="recentList"></ul>
+  </section>
 </main>
 
 <footer class="wrap">
   <div class="notes">
-    <b data-i18n>Your privacy:</b> <span data-i18n>SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't keep a record of it. See Privacy & About for details.</span>
+    <b data-i18n>Your privacy:</b> <span data-i18n>SafeLink first checks the link's address and structure in your browser. For a deeper check, the link (without anything after “?” or “#”) is sent to our server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't store the links you check, but our host, Cloudflare, may log requests. See Privacy & About for details.</span>
     <br><b data-i18n>Good to know:</b> <span data-i18n>SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.</span>
   </div>
-  <div class="foot-links"><button class="linkbtn" type="button" id="footReport" data-i18n>Report a scam</button><a href="privacy.html" data-i18n>Privacy &amp; About</a></div>
+  <div class="foot-links"><button class="linkbtn" type="button" id="footReport" data-i18n>Report a scam</button><a href="after-click.html" id="footAfter" data-i18n>I already clicked a link</a><a href="privacy.html" data-i18n>Privacy &amp; About</a></div>
   <div class="foot-mark">SafeLink <span data-i18n>— Cybersecurity for everyone, not just experts.</span></div>
 </footer>
 
@@ -372,7 +417,7 @@
    ========================================================================= */
 
 /* ---------- known brands (their name being imitated is a red flag) ---------- */
-const BRANDS = ["paypal","google","apple","icloud","microsoft","office365","outlook","hotmail","amazon","facebook","instagram","whatsapp","netflix","linkedin","ebay","dropbox","adobe","steam","spotify","tiktok","snapchat","yahoo","gmail","twitter","telegram","discord","zoom","docusign","skype","onedrive","protonmail","github","gitlab","cloudflare","okta","shopify","stripe","airbnb","booking","uber","walmart","tesla","samsung","huawei","xiaomi","alibaba","aliexpress","temu","shein","venmo","cashapp","zelle","coinbase","binance","metamask","kraken","blockchain","trustwallet","opensea","ledger","dhl","fedex","ups","usps","royalmail","canadapost","auspost","irs","chase","wellsfargo","bankofamerica","citibank","hsbc","barclays","santander","revolut","monzo","wise","visa","mastercard","americanexpress","capitalone","hdfc","icici","rakuten","mercari","line","mufg","smbc","mizuho","jcb","aeon","paypay","docomo","softbank","kddi","resona","japanpost","yamato","sagawa","uniqlo","nintendo","playstation","sony","zozotown","sbi","esewa","khalti","fonepay","imepay","nabilbank","nicasia","globalime","everestbank","ncell","daraz","foodmandu"];
+const BRANDS = ["paypal","google","apple","icloud","microsoft","office365","outlook","hotmail","amazon","facebook","instagram","whatsapp","netflix","linkedin","ebay","dropbox","adobe","steam","spotify","tiktok","snapchat","yahoo","gmail","twitter","telegram","discord","zoom","docusign","skype","onedrive","protonmail","github","gitlab","cloudflare","okta","shopify","stripe","airbnb","booking","uber","walmart","tesla","samsung","huawei","xiaomi","alibaba","aliexpress","temu","shein","venmo","cashapp","zelle","coinbase","binance","metamask","kraken","blockchain","trustwallet","opensea","ledger","dhl","fedex","ups","usps","royalmail","canadapost","auspost","irs","chase","wellsfargo","bankofamerica","citibank","hsbc","barclays","santander","revolut","monzo","wise","visa","mastercard","americanexpress","capitalone","hdfc","icici","rakuten","mercari","line","mufg","smbc","mizuho","jcb","aeon","paypay","docomo","softbank","kddi","resona","japanpost","yamato","sagawa","uniqlo","nintendo","playstation","sony","zozotown","sbi","esewa","khalti","fonepay","imepay","nabilbank","nicasia","globalime","everestbank","ncell","daraz","foodmandu","ntc","nepaltelecom","nibl","nmbbank","laxmibank","prabhubank","sanimabank","connectips","hamrobazar","sastodeal","pathao","nepalpolice"];
 
 /* ---------- abused TLDs & url shorteners ---------- */
 const RISKY_TLDS = ["zip","mov","tk","ml","ga","cf","gq","xyz","top","click","country","kim","work","link","rest","fit","loan","men","gdn","review","stream","download","racing","win","bid","date","faith","cricket","science","party"];
@@ -434,7 +479,7 @@ function analyze(raw){
   const full=(u.hostname+u.pathname+u.search).toLowerCase();
   const {sld,domain}=getRegistrable(host);
   const F=[]; let score=0;
-  const add=(sev,title,detail,w)=>{F.push({sev,title,detail});score+=w||0;};
+  const add=(sev,title,detail,w)=>{F.push({sev,title,detail,w:w||0});score+=w||0;};
 
   /* scheme */
   if(scheme==="javascript"||scheme==="data"||scheme==="vbscript"||scheme==="blob"){
@@ -518,7 +563,7 @@ function analyze(raw){
   const scope=(brandFlagged||scheme==="http")?full:host;
   const foundAction=[...new Set(ACTION_WORDS.filter(w=>scope.includes(w)))];
   if(foundAction.length){
-    add("warn","Urgent-sounding words in the link","Words like \u201c"+foundAction.slice(0,2).join("\u201d, \u201c")+"\u201d are often used to rush you into signing in on a fake page.",brandFlagged?10:20);
+    add("warn","Login or verification words in the link","Words like \u201c"+foundAction.slice(0,2).join("\u201d, \u201c")+"\u201d are often used to lure you into signing in or “verifying” on a fake page.",brandFlagged?10:20);
   }
 
   /* shortener */
@@ -606,6 +651,77 @@ function extractLinks(text){
   return out;
 }
 
+/* ---------- scam wording inside a pasted message (runs only in the browser) ---------- */
+const FREE_MAIL=["gmail.com","yahoo.com","yahoo.co.jp","outlook.com","hotmail.com","live.com","icloud.com","proton.me","protonmail.com","aol.com","mail.com","gmx.com","yandex.com","ymail.com"];
+const MSG_SKIP_BRANDS=[...COMMON_WORD_BRANDS,"chase","target","line","visa","wise"];
+const MSG_RULES=[
+ {id:"otp",sev:"danger",w:35,title:"Asks for a code or PIN",detail:"Real companies never ask you to send, read out or reply with a one-time code (OTP) or PIN. Scammers use it to take over your account or your money.",
+  test:t=>/(otp|one[- ]?time (pass(word|code)|code)|verification code|security code|\bpin\b|cvv|ワンタイム|認証コード|暗証番号|ओटीपी|पिन)/i.test(t)&&/(send|share|give|reply|tell|read|forward|enter|provide|confirm|submit|入力|教えて|送って|知らせ|पठाउ|बताउ|दिनुहोस्|हाल्नुहोस्)/i.test(t)},
+ {id:"prize",sev:"danger",w:30,title:"Promises a prize or free money",detail:"Messages that say you won something you never entered are almost always scams. They want your details or a small “fee” first.",
+  test:t=>/(congratulations|you (have )?won|winner|lottery|jackpot|free (gift|iphone|money)|claim your (prize|reward|gift)|当選|おめでとうございます|キャンペーン当選|बधाई|लोटरी|इनाम|जित्नुभयो)/i.test(t)},
+ {id:"remote",sev:"danger",w:30,title:"Asks you to install an app or share your screen",detail:"Scammers ask you to install a “support” app (or an unknown APK file) to take control of your phone or see your banking.",
+  test:t=>/(anydesk|teamviewer|\bapk\b|install (this |the |our )?app|download (this |the |our )?app|アプリ(を)?(インストール|ダウンロード)|एप (इन्स्टल|डाउनलोड)|एप्लिकेसन (इन्स्टल|डाउनलोड))/i.test(t)},
+ {id:"fee",sev:"warn",w:25,title:"Asks for a fee, gift cards or crypto",detail:"A “processing” or “customs” fee, gift-card codes or cryptocurrency is a classic way to be paid by a scam victim and can't be taken back.",
+  test:t=>/(processing fee|handling fee|customs fee|release fee|delivery fee|advance payment|gift ?cards?|bitcoin|crypto(currency)?|western union|手数料|ギフトカード|ビットコイン|कस्टम शुल्क|प्रोसेसिङ शुल्क|शुल्क तिर)/i.test(t)},
+ {id:"threat",sev:"warn",w:20,title:"Threatens to block or close your account",detail:"Scammers say your account will be blocked or that there was “unusual activity” so you panic and act before thinking.",
+  test:t=>/(suspend|blocked|locked|deactivat|disabled|will be closed|restricted|unusual activity|unauthori[sz]ed|停止|凍結|ロック|制限|不正(な)?(アクセス|ログイン)|अवरुद्ध|बन्द हुने|निलम्बन|ब्लक)/i.test(t)},
+ {id:"kyc",sev:"warn",w:18,title:"Asks you to verify or update your details",detail:"Real banks and wallets rarely ask you to “verify” or “update KYC” through a link in a text message. Open the official app yourself instead.",
+  test:t=>/(\bkyc\b|update your (account|details|information)|verify your (account|identity|details)|confirm your (account|identity|details)|本人確認|情報(の)?更新|केवाईसी|खाता (अपडेट|प्रमाणित))/i.test(t)},
+ {id:"urgent",sev:"warn",w:15,title:"Pressures you to act fast",detail:"Urgent deadlines are used to stop you from thinking or asking someone you trust.",
+  test:t=>/(urgent|immediately|within \d+ ?(hours?|hrs?|minutes?|mins?)|expires? (today|soon|in)|last chance|final notice|act now|today only|right away|至急|直ちに|すぐに|本日中|期限|तुरुन्त|अविलम्ब|छिटो|आजै)/i.test(t)},
+ {id:"authority",sev:"warn",w:15,title:"Claims to be police, a court or tax office",detail:"Scammers pretend to be an authority and threaten arrest or fines. Real authorities do not demand money or codes by message.",
+  test:t=>/(police|court order|arrest|warrant|legal action|tax office|\birs\b|customs office|警察|逮捕|裁判所|税務署|प्रहरी|पक्राउ|अदालत)/i.test(t)}
+];
+function scanMessage(text){
+  const t=String(text||"").slice(0,5000);
+  const S=[]; let score=0;
+  const add=(sev,title,detail,w,extra)=>{S.push({sev,title,detail,extra:extra||"",w});score+=w;};
+  // a sentence such as "Do not share this code" is advice, not a request
+  const positive=t.split(/[.!?。\n]+/).filter(s=>!/(do not|don't|dont|never|ない|ません|नदिनु|नबताउ|नगर्नु|नपठाउ)/i.test(s)).join(". ");
+  for(const r of MSG_RULES) if(r.test(r.id==="otp"?positive:t)) add(r.sev,r.title,r.detail,r.w);
+
+  const links=extractLinks(t).slice(0,10);
+  const analysed=links.map(l=>({l,r:analyze(l)})).filter(x=>!x.r.error);
+  if(analysed.length&&/(parcel|package|delivery|shipment|courier|redelivery|再配達|不在|荷物|पार्सल)/i.test(t))
+    add("warn","Parcel message with a link","“Your parcel couldn't be delivered” texts with a link are a very common scam. Check the courier's official app or site instead.",10);
+  const bad=analysed.find(x=>x.r.verdict==="danger"), odd=analysed.find(x=>x.r.verdict==="warn");
+  if(bad) add("danger","A link in this message looks dangerous","One of the links in the text shows strong signs of a fake site. Check it below before doing anything.",40,bad.r.host);
+  else if(odd) add("warn","A link in this message looks suspicious","One of the links in the text has warning signs. Check it below.",15,odd.r.host);
+  // it names a company, but no link goes to that company
+  if(analysed.length){
+    const hosts=analysed.map(x=>x.r.host.toLowerCase());
+    const named=BRANDS.find(b=>b.length>=5&&!MSG_SKIP_BRANDS.includes(b)&&new RegExp("(^|[^a-z0-9])"+b+"([^a-z0-9]|$)","i").test(t));
+    if(named&&!hosts.some(h=>h.includes(named)||BRAND_SAFE_DOMAINS.some(d=>h===d||h.endsWith("."+d))&&h.includes(named)))
+      add("warn","Names a company, but the link goes somewhere else","The message mentions “"+named+"”, yet none of its links lead to that company's own website.",20,hosts.slice(0,3).join(", "));
+  }
+
+  // sender address(es)
+  const seen=new Set(); const em=/[a-z0-9._%+\-]+@([a-z0-9\-]+(?:\.[a-z0-9\-]+)+)/gi; let m;
+  const emails=[];
+  while((m=em.exec(t))&&emails.length<3){
+    if(t.slice(Math.max(0,m.index-12),m.index).includes("://")) continue;
+    const dom=m[1].toLowerCase(); if(seen.has(dom)) continue; seen.add(dom); emails.push({addr:m[0],dom});
+  }
+  for(const e of emails){
+    const free=FREE_MAIL.includes(e.dom);
+    const r=free?null:analyze(e.dom);
+    if(r&&!r.error&&r.verdict==="danger") add("danger","The sender's email address looks fake","The address imitates a trusted name. Don't reply, and don't click anything in the message.",40,e.addr);
+    else if(r&&!r.error&&r.verdict==="warn") add("warn","The sender's email address looks odd","The address has warning signs. Check who it really is before replying.",20,e.addr);
+    const nm=new RegExp("([^<>\\n]{2,40}?)\\s*<\\s*"+e.addr.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*>","i").exec(t);
+    const name=(nm?nm[1]:"").toLowerCase().replace(/[^a-z0-9]/g,"");
+    const nb=name&&BRANDS.find(b=>b.length>=4&&!MSG_SKIP_BRANDS.includes(b)&&name.includes(b));
+    const official=/(support|security|service|official|helpdesk|billing|noreply|team)/.test(name);
+    if(nb&&!e.dom.includes(nb)&&!BRAND_SAFE_DOMAINS.some(d=>e.dom===d||e.dom.endsWith("."+d)))
+      add("warn","The sender's name and address don't match","The name says “"+nb+"” but the address belongs to another site. Anyone can type any display name.",30,e.addr);
+    else if(free&&(nb||official))
+      add("warn","An official-sounding sender uses a free email address","Real companies write from their own domain, not from a free address like Gmail or Yahoo.",25,e.addr);
+  }
+  const hasDanger=S.some(s=>s.sev==="danger");
+  const verdict=hasDanger||score>=40?"danger":score>=15?"warn":"safe";
+  S.sort((a,b)=>({danger:0,warn:1}[a.sev]-({danger:0,warn:1}[b.sev])));
+  return {verdict,score:Math.min(100,score),signals:S,links,emails};
+}
+
 /* ---------- rendering ---------- */
 const ICONS={
   safe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -627,6 +743,7 @@ const ADVICE={
   danger:{t:"What to do",p:"Don't click or enter any information. Delete the message, and if it claims to be your bank or a company, contact them using a number or app you already trust."}
 };
 
+let lastResult=null;
 function render(r,keepHint){
   const box=document.getElementById("result");
   if(r.error){
@@ -655,10 +772,20 @@ function render(r,keepHint){
   }
   const a=ADVICE[r.verdict];
   html+='<div class="advice">'+ICONS.bulb+'<div><div class="ft-title" data-i18n>'+a.t+'</div><p data-i18n>'+a.p+'</p></div></div>';
+  const pts=r.findings.filter(f=>f.w>0);
+  if(pts.length){
+    html+='<details class="why"><summary data-i18n>Why this score?</summary><ul>';
+    for(const f of pts) html+='<li><span data-i18n>'+escapeHtml(f.title)+'</span><b>+'+f.w+'</b></li>';
+    html+='<li><span data-i18n>Total (maximum 100)</span><b>'+Math.min(100,r.raw)+'</b></li></ul>';
+    html+='<p data-i18n>Any single “danger” finding makes the result “Likely dangerous”, whatever the total.</p></details>';
+  }
   if(/^https?:\/\//i.test(r.url)) html+='<div class="rp-open-row"><button class="linkbtn" type="button" data-preview="1"><span data-i18n>Show a safe preview</span></button></div>';
-  html+='<div class="rp-open-row"><button class="linkbtn" type="button" data-report="1"><span data-i18n>Report this link as a scam</span></button></div>';
-  html+='</div>';
+  html+='<div class="act-row"><button class="linkbtn" type="button" data-report="1"><span data-i18n>Report this link as a scam</span></button>';
+  html+='<button class="linkbtn" type="button" data-share="1"><span data-i18n>Share this result</span></button>';
+  if(r.verdict!=="safe") html+='<a href="after-click.html" class="after-link" data-i18n>I already clicked it. What do I do?</a>';
+  html+='</div></div>';
 
+  lastResult=r;
   box.innerHTML=html;
   box.classList.add("show");
   histRecord(r);
@@ -670,14 +797,22 @@ function setHint(msg){const h=document.getElementById("hint");h.dataset.en=msg;h
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 
 /* ---------- events ---------- */
-function runCheck(){
+function runCheck(keepMsg){
   const v=document.getElementById("url").value;
   if(!v.trim()){setHint("Please paste a link first.");reapplyLang();return;}
   hideLinks(); hidePreview();
-  if(/\s/.test(v.trim())){                     // a whole message was pasted: find the links in it
-    const links=extractLinks(v);
-    if(links.length===0){ setHint("We couldn't find a web link in that text."); reapplyLang(); return; }
-    if(links.length>1){ setHint(""); showLinks(links); return; }
+  if(keepMsg!==true) hideMsg();
+  const vt=v.trim();
+  const isEmail=/^[^\s@\/]+@[^\s@\/]+\.[a-z]{2,}$/i.test(vt);
+  if(isEmail||/\s/.test(vt)){                  // a whole message (or a sender address) was pasted
+    const msg=scanMessage(vt), links=isEmail?[]:extractLinks(vt);
+    if(msg.signals.length) showMsg(msg);
+    if(links.length===0){
+      if(!msg.signals.length){ setHint(isEmail?"No warning signs found in this sender address.":"We couldn't find a web link in that text."); reapplyLang(); }
+      else {setHint(""); reapplyLang();}
+      return;
+    }
+    if(links.length>1||msg.signals.length){ setHint(""); showLinks(links); return; }
     document.getElementById("url").value=links[0]; runCheck(); return;
   }
   const my=++checkSeq;
@@ -693,7 +828,7 @@ let checkSeq=0;
 async function enrich(r,input,my){
   let s=null, limited=false;
   try{
-    const res=await fetch("/api/check",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:input}),signal:AbortSignal.timeout(15000)});
+    const res=await fetch("/api/check",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:input.replace(/[?#].*$/,"")}),signal:AbortSignal.timeout(15000)});
     if(res.ok) s=await res.json(); else if(res.status===429) limited=true;
   }catch(_){}
   if(my!==checkSeq) return;                       // a newer check replaced this one
@@ -707,7 +842,7 @@ async function enrich(r,input,my){
   }                    // backend unavailable: keep the local result
 
   const F=r.findings.slice(); let extra=0;
-  const add=(sev,title,detail,w)=>{F.push({sev,title,detail});extra+=w||0;};
+  const add=(sev,title,detail,w)=>{F.push({sev,title,detail,w:w||0});extra+=w||0;};
 
   if(s.safeBrowsing&&s.safeBrowsing.threats&&s.safeBrowsing.threats.length)
     add("danger","Reported as dangerous by Google Safe Browsing","This link is on a known list of scam, malware or harmful sites. Do not open it.",90);
@@ -794,36 +929,36 @@ const RTL=new Set(["ar","he","fa","ur","ps","sd"]);
 /* ---------- built-in Nepali (offline, hand-written) ---------- */
 const NE_BUILTIN = {
  "Check if a link is safe before you click.": "क्लिक गर्नुअघि लिङ्क सुरक्षित छ कि छैन जाँच्नुहोस्।",
- "Paste any link from an email or text message. SafeLink explains, in plain words, whether it looks safe — right here in your browser.": "इमेल वा म्यासेजमा आएको जुनसुकै लिङ्क यहाँ टाँस्नुहोस्। SafeLink ले त्यो लिङ्क सुरक्षित देखिन्छ कि छैन भनेर सजिलो भाषामा — यहीँ तपाईंको ब्राउजरमै — बुझाउँछ।",
+ "Paste any link from an email or text message. SafeLink explains, in plain words, whether it looks safe. The first check starts in your browser; deeper checks run on our server.": "इमेल वा मेसेजमा आएको जुनसुकै लिङ्क यहाँ टाँस्नुहोस्। SafeLink ले त्यो लिङ्क सुरक्षित देखिन्छ कि देखिँदैन भनेर सजिलो भाषामा बुझाउँछ। पहिलो जाँच तपाईंको ब्राउजरमा सुरु हुन्छ; थप गहिरो जाँच हाम्रो सर्भरमा चल्छ।",
  "Check link": "लिङ्क जाँच्नुहोस्",
  "Try an example:": "उदाहरण हेर्नुहोस्:",
  "Obvious scam": "स्पष्ट ठगी",
- "Sneaky lookalike": "चलाख नक्कली",
+ "Sneaky lookalike": "मिल्दोजुल्दो नक्कली साइट",
  "Safe site": "सुरक्षित साइट",
  "Your privacy:": "तपाईंको गोपनीयता:",
- "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't keep a record of it. See Privacy & About for details.": "SafeLink ले लिङ्कको ठेगाना र बनोट तपाईंकै ब्राउजरभित्र जाँच्छ। थप गहिरो जाँचका लागि लिङ्क मात्र हाम्रो सुरक्षित सर्भरमा पठाइन्छ, जसले अन्य सुरक्षा सेवाहरू (जस्तै Google Safe Browsing र VirusTotal) लाई पनि सोध्छ। हामी यसको कुनै अभिलेख राख्दैनौं। विवरणका लागि “गोपनीयता र बारेमा” हेर्नुहोस्।",
+ "SafeLink first checks the link's address and structure in your browser. For a deeper check, the link (without anything after “?” or “#”) is sent to our server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't store the links you check, but our host, Cloudflare, may log requests. See Privacy & About for details.": "SafeLink ले पहिले लिङ्कको ठेगाना र बनोट तपाईंकै ब्राउजरमा जाँच्छ। थप गहिरो जाँचका लागि लिङ्क (“?” वा “#” पछिको भाग बिना) हाम्रो सर्भरमा पठाइन्छ, जसले अन्य सुरक्षा सेवाहरू (जस्तै Google Safe Browsing र VirusTotal) लाई पनि सोध्छ। तपाईंले जाँचेका लिङ्क हामी भण्डारण गर्दैनौं, तर हाम्रो होस्ट Cloudflare ले अनुरोधहरूको लग राख्न सक्छ। विवरणका लागि “गोपनीयता र हाम्रो बारेमा” हेर्नुहोस्।",
  "Good to know:": "जान्न राम्रो:",
- "SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.": "SafeLink ले पहिले लिङ्कमै लेखिएका खतराका सङ्केतहरू पढ्छ, त्यसपछि (अनलाइन हुँदा) सुरक्षित ब्याकएन्डमार्फत रिडाइरेक्टहरू पछ्याउँछ र डोमेनको उमेर जाँच्छ। कुनै पनि उपकरणले लिङ्क सुरक्षित छ भनी ग्यारेन्टी दिन सक्दैन।",
+ "SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.": "SafeLink ले पहिले लिङ्कमै लेखिएका खतराका सङ्केतहरू पढ्छ, त्यसपछि (अनलाइन हुँदा) सुरक्षित ब्याकएन्डमार्फत रिडाइरेक्टहरू पछ्याउँछ र डोमेनको उमेर जाँच्छ। कुनै पनि टूलले लिङ्क सुरक्षित छ भनी ग्यारेन्टी दिन सक्दैन।",
  "— Cybersecurity for everyone, not just experts.": "— साइबर सुरक्षा सबैका लागि, विशेषज्ञका लागि मात्र होइन।",
  "Search language…": "भाषा खोज्नुहोस्…",
  "Paste a link here, e.g. https://example.com": "यहाँ लिङ्क टाँस्नुहोस्, जस्तै https://example.com",
  "Looks safe": "सुरक्षित देखिन्छ",
  "Be careful": "सावधान रहनुहोस्",
  "Likely dangerous": "सम्भवतः खतरनाक",
- "We didn't find warning signs in this link's address. It still pays to be sure it's a site you meant to visit.": "यस लिङ्कको ठेगानामा हामीले खतराका सङ्केतहरू भेटेनौं। तैपनि, यो तपाईंले जान खोज्नुभएकै साइट हो भनी पक्का गर्नु राम्रो हुन्छ।",
+ "We didn't find warning signs in this link's address. It still pays to be sure it's a site you meant to visit.": "यस लिङ्कको ठेगानामा हामीले खतराका सङ्केतहरू फेला पारेनौं। तैपनि, यो तपाईंले जान खोज्नुभएकै साइट हो भनी पक्का गर्नु राम्रो हुन्छ।",
  "This link has some suspicious traits. Don't enter passwords or payment details unless you're certain it's genuine.": "यस लिङ्कमा केही शङ्कास्पद कुराहरू छन्। यो साँच्चै सही हो भनी पक्का नभएसम्म पासवर्ड वा भुक्तानी विवरण नहाल्नुहोस्।",
  "This link shows strong signs of a scam or fake site. We recommend you do not open it.": "यस लिङ्कले ठगी वा नक्कली साइटका बलिया सङ्केतहरू देखाउँछ। यसलाई नखोल्न हामी सल्लाह दिन्छौं।",
  "Lower risk": "कम जोखिम",
  "Higher risk": "बढी जोखिम",
- "What we found": "हामीले के भेट्यौं",
- "What to do": "के गर्ने",
+ "What we found": "हामीले के फेला पार्यौं",
+ "What to do": "के गर्ने?",
  "If you were expecting this link, it's reasonable to proceed. When in doubt, type the company's address yourself instead of clicking.": "तपाईं यो लिङ्कको अपेक्षा गर्दै हुनुहुन्थ्यो भने अगाडि बढ्नु ठीकै हो। शङ्का लागे, क्लिक गर्नुको सट्टा कम्पनीको ठेगाना आफैं टाइप गर्नुहोस्।",
  "Go to the company's official site directly rather than through this link, and never enter your login or card details on a page you reached this way.": "यस लिङ्कमार्फत नगई कम्पनीको आधिकारिक साइटमा सिधै जानुहोस्, र यसरी पुगेको पृष्ठमा आफ्नो लगइन वा कार्ड विवरण कहिल्यै नहाल्नुहोस्।",
  "Don't click or enter any information. Delete the message, and if it claims to be your bank or a company, contact them using a number or app you already trust.": "क्लिक नगर्नुहोस् वा कुनै जानकारी नहाल्नुहोस्। सन्देश मेटाउनुहोस्, र यदि यो तपाईंको बैंक वा कुनै कम्पनी भएको दाबी गर्छ भने, तपाईंले पहिल्यैदेखि भरोसा गर्ने नम्बर वा एपमार्फत सम्पर्क गर्नुहोस्।",
  "This isn't a normal web link": "यो सामान्य वेब लिङ्क होइन",
  "It runs code or hides content instead of opening a real website. Never open it.": "यसले वास्तविक वेबसाइट खोल्नुको सट्टा कोड चलाउँछ वा सामग्री लुकाउँछ। कहिल्यै नखोल्नुहोस्।",
  "Uses a secure connection (HTTPS)": "सुरक्षित जडान (HTTPS) प्रयोग गर्छ",
- "Traffic to this site is encrypted. (Note: scammers can use HTTPS too, so this alone isn't proof of safety.)": "यस साइटसँगको सञ्चार गुप्तीकृत छ। (सावधान: ठगहरूले पनि HTTPS प्रयोग गर्न सक्छन्, त्यसैले यति मात्रैले सुरक्षित हो भन्ने प्रमाणित हुँदैन।)",
+ "Traffic to this site is encrypted. (Note: scammers can use HTTPS too, so this alone isn't proof of safety.)": "यस साइटसँगको सञ्चार इन्क्रिप्ट गरिएको छ। (सावधान: ठगहरूले पनि HTTPS प्रयोग गर्न सक्छन्, त्यसैले यति मात्रैले सुरक्षित हो भन्ने प्रमाणित हुँदैन।)",
  "Not a secure connection": "सुरक्षित जडान होइन",
  "This link uses plain HTTP, so anything you type could be seen by others. Real sign-in pages almost always use HTTPS.": "यो लिङ्कले साधारण HTTP प्रयोग गर्छ, त्यसैले तपाईंले टाइप गर्ने कुरा अरूले देख्न सक्छन्। वास्तविक साइन-इन पृष्ठहरूले प्रायः सधैं HTTPS प्रयोग गर्छन्।",
  "The address is a raw number, not a name": "ठेगाना नामको सट्टा खाली नम्बर हो",
@@ -834,7 +969,7 @@ const NE_BUILTIN = {
  "The address uses look-alike foreign letters to imitate a trusted name. This is a homograph attack.": "ठेगानाले भरोसायोग्य नामको नक्कल गर्न मिल्दाजुल्दा विदेशी अक्षरहरू प्रयोग गर्छ। यो होमोग्राफ आक्रमण हो।",
  "Unusual characters in the address": "ठेगानामा असामान्य अक्षरहरू",
  "The web address contains non-standard characters that can be used to mimic a real site.": "वेब ठेगानामा सामान्य नभएका अक्षरहरू छन्, जुन वास्तविक साइटको नक्कल गर्न प्रयोग गर्न सकिन्छ।",
- "Urgent-sounding words in the link": "लिङ्कमा हतारो देखाउने शब्दहरू",
+ "Login or verification words in the link": "लिङ्कमा लगइन वा प्रमाणीकरण गराउने शब्दहरू",
  "Shortened link — destination hidden": "छोटो पारिएको लिङ्क — गन्तव्य लुकेको",
  "This is a link-shortener, so you can't see where it really goes until you open it. Be careful with shortened links from strangers.": "यो लिङ्क-सर्टनर हो, त्यसैले खोल्नुअघि यो साँच्चै कहाँ जान्छ भनी देखिँदैन। अपरिचितबाट आएका छोटो लिङ्कहरूसँग सावधान रहनुहोस्।",
  "Very long, layered address": "धेरै लामो, तहगत ठेगाना",
@@ -856,11 +991,11 @@ const NE_BUILTIN = {
  "Use camera": "क्यामेरा प्रयोग गर्नुहोस्",
  "Upload image": "तस्बिर अपलोड गर्नुहोस्",
  "Close": "बन्द गर्नुहोस्",
- "Scanning happens on your device. The picture is never uploaded.": "स्क्यान तपाईंकै उपकरणमा हुन्छ। तस्बिर कहिल्यै अपलोड गरिँदैन।",
+ "Scanning happens on your device. The picture is never uploaded.": "स्क्यान तपाईंकै डिभाइसमा हुन्छ। तस्बिर कहिल्यै अपलोड गरिँदैन।",
  "Camera isn't available in this browser. Try uploading a photo of the QR code instead.": "यो ब्राउजरमा क्यामेरा उपलब्ध छैन। बरु QR कोडको फोटो अपलोड गर्नुहोस्।",
  "Couldn't open the camera. Allow camera access, or upload a photo of the QR code instead.": "क्यामेरा खोल्न सकिएन। क्यामेरा अनुमति दिनुहोस्, वा QR कोडको फोटो अपलोड गर्नुहोस्।",
  "That file couldn't be read as an image.": "त्यो फाइल तस्बिरका रूपमा पढ्न सकिएन।",
- "No QR code found in that image. Try a clearer, closer photo.": "त्यस तस्बिरमा QR कोड भेटिएन। अझ स्पष्ट र नजिकबाट खिचेको फोटो प्रयास गर्नुहोस्।",
+ "No QR code found in that image. Try a clearer, closer photo.": "त्यस तस्बिरमा QR कोड फेला परेन। अझ स्पष्ट र नजिकबाट खिचेको फोटो प्रयास गर्नुहोस्।",
  "This QR code doesn't contain a web link, so there's nothing to check.": "यो QR कोडमा वेब लिङ्क छैन, त्यसैले जाँच्ने केही छैन।",
  "Report a scam": "ठगी रिपोर्ट गर्नुहोस्",
  "Report this link as a scam": "यो लिङ्क ठगीको रूपमा रिपोर्ट गर्नुहोस्",
@@ -871,11 +1006,11 @@ const NE_BUILTIN = {
  "Malware or harmful download": "म्यालवेयर वा हानिकारक डाउनलोड",
  "Fake shop or shopping scam": "नक्कली पसल वा किनमेल ठगी",
  "Pretends to be a company or person": "कम्पनी वा व्यक्तिको नक्कल गर्छ",
- "Found in a QR code": "QR कोडमा भेटिएको",
+ "Found in a QR code": "QR कोडमा फेला परेको",
  "Something else": "अरू कुनै",
  "Details (optional)": "विवरण (ऐच्छिक)",
  "What happened? Please don't include personal details.": "के भयो? कृपया व्यक्तिगत विवरण नराख्नुहोस्।",
- "We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; a one-way scrambled code is used only to stop duplicate reports.": "हामी लिङ्क (“?” वा “#” पछिको भाग बिना), तपाईंले छानेको प्रकार र टिपोट सुरक्षित गर्छौं। तपाईंको IP ठेगाना कहिल्यै सुरक्षित गरिँदैन; दोहोरिएका रिपोर्ट रोक्न एकतर्फी स्क्र्याम्बल गरिएको कोड मात्र प्रयोग हुन्छ।",
+ "We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; only a one-way hash code (made with a secret key) is used to stop duplicate reports.": "हामी लिङ्क (“?” वा “#” पछिको भाग बिना), तपाईंले छानेको प्रकार र टिपोट सेभ गर्छौं। तपाईंको IP ठेगाना कहिल्यै सेभ गरिँदैन; दोहोरिएका रिपोर्ट रोक्न गोप्य कुञ्जीले बनाइएको हाश (एकतर्फी) कोड मात्र प्रयोग हुन्छ।",
  "Send report": "रिपोर्ट पठाउनुहोस्",
  "Thank you! Your report helps protect others.": "धन्यवाद! तपाईंको रिपोर्टले अरूलाई जोगाउँछ।",
  "You've already reported this site recently. Thank you!": "तपाईंले यो साइट हालै रिपोर्ट गरिसक्नुभएको छ। धन्यवाद!",
@@ -886,15 +1021,15 @@ const NE_BUILTIN = {
  "Reported by other users": "अन्य प्रयोगकर्ताले रिपोर्ट गरेको",
  "Flagged as dangerous by security vendors": "सुरक्षा कम्पनीहरूले खतरनाक भनी चिन्ह लगाएका",
  "Flagged by a few security vendors": "केही सुरक्षा कम्पनीहरूले चेतावनी दिएका",
- "We couldn't find a web link in that text.": "त्यो पाठमा वेब लिङ्क भेटिएन।",
- "We found several links in your text. Choose one to check:": "तपाईंको पाठमा धेरै लिङ्क भेटिए। जाँच्न एउटा छान्नुहोस्:",
+ "We couldn't find a web link in that text.": "त्यो पाठमा वेब लिङ्क फेला परेन।",
+ "We found several links in your text. Choose one to check:": "तपाईंको पाठमा धेरै लिङ्क फेला परे। जाँच्न एउटा छान्नुहोस्:",
  "Check": "जाँच्नुहोस्",
- "Recent checks": "हालका जाँचहरू",
- "Saved only on this device.": "यो उपकरणमा मात्र सुरक्षित गरिन्छ।",
+ "Recent checks": "हालैका जाँचहरू",
+ "Saved only on this device.": "यो डिभाइसमा मात्र राखिन्छ।",
  "Clear history": "इतिहास मेटाउनुहोस्",
- "Stop saving": "सुरक्षित गर्न बन्द गर्नुहोस्",
+ "Stop saving": "सेभ गर्न बन्द गर्नुहोस्",
  "Turn on history": "इतिहास सुरु गर्नुहोस्",
- "Privacy & About": "गोपनीयता र बारेमा",
+ "Privacy & About": "गोपनीयता र हाम्रो बारेमा",
  "Security certificate problem": "सुरक्षा प्रमाणपत्रमा समस्या",
  "This site's secure (HTTPS) connection could not be set up safely. Its certificate may be expired, self-signed or issued for a different website, so don't enter any information.": "यो साइटको सुरक्षित (HTTPS) जडान सुरक्षित रूपमा स्थापना गर्न सकिएन। यसको प्रमाणपत्र म्याद सकिएको, आफैँले हस्ताक्षर गरेको वा फरक वेबसाइटका लागि जारी गरिएको हुन सक्छ, त्यसैले कुनै जानकारी नहाल्नुहोस्।",
  "Valid security certificate": "मान्य सुरक्षा प्रमाणपत्र",
@@ -916,10 +1051,10 @@ const NE_BUILTIN = {
  "Safe preview": "सुरक्षित पूर्वावलोकन",
  "Show a safe preview": "सुरक्षित पूर्वावलोकन देखाउनुहोस्",
  "Taking a preview…": "पूर्वावलोकन बनाउँदै…",
- "A screenshot taken by our server. Nothing from this site ran on your device. The page may look different when opened normally.": "यो हाम्रो सर्भरले खिचेको स्क्रिनसट हो। यो साइटको केही पनि तपाईंको उपकरणमा चलेको छैन। सामान्य रूपमा खोल्दा पृष्ठ फरक देखिन सक्छ।",
+ "A screenshot taken by our server. Nothing from this site ran on your device. The page may look different when opened normally.": "यो हाम्रो सर्भरले खिचेको स्क्रिनसट हो। यो साइटको केही पनि तपाईंको डिभाइसमा चलेको छैन। सामान्य रूपमा खोल्दा पृष्ठ फरक देखिन सक्छ।",
  "Preview isn't available right now. Please try again later.": "अहिले पूर्वावलोकन उपलब्ध छैन। कृपया पछि फेरि प्रयास गर्नुहोस्।",
  "This link can't be previewed.": "यो लिङ्कको पूर्वावलोकन गर्न सकिँदैन।",
- "Couldn't take a preview. The site may be offline or may block our server.": "पूर्वावलोकन बनाउन सकिएन। साइट अफलाइन वा हाम्रो सर्भर ब्लक गरेको हुन सक्छ।",
+ "Couldn't take a preview. The site may be offline or may block our server.": "पूर्वावलोकन बनाउन सकिएन। साइट अफलाइन वा हाम्रो सर्भरलाई ब्लक गरेको हुन सक्छ।",
  "Deeper check paused": "थप जाँच रोकिएको",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "तपाईंले छोटो समयमा धेरै लिङ्क जाँच्नुभयो। थप जाँच फेरि चलाउन कृपया एक मिनेट पर्खनुहोस्।",
  "No warning signs in the address": "ठेगानामा कुनै खतराका सङ्केत छैनन्",
@@ -930,30 +1065,30 @@ const NE_BUILTIN = {
 /* ---------- built-in Japanese (offline, hand-written) ---------- */
 const JA_BUILTIN = {
  "Check if a link is safe before you click.": "リンクをクリックする前に、安全かどうかを確認しましょう。",
- "Paste any link from an email or text message. SafeLink explains, in plain words, whether it looks safe — right here in your browser.": "メールやメッセージに届いたリンクをここに貼り付けてください。SafeLink が安全そうかどうかを、わかりやすい言葉でブラウザ上で説明します。",
+ "Paste any link from an email or text message. SafeLink explains, in plain words, whether it looks safe. The first check starts in your browser; deeper checks run on our server.": "メールやメッセージに届いたリンクをここに貼り付けてください。SafeLink が安全そうかどうかを、わかりやすい言葉で説明します。最初の確認はブラウザ上で始まり、詳しい確認は当サーバーで行われます。",
  "Check link": "リンクを確認",
  "Try an example:": "例を試す：",
  "Obvious scam": "明らかな詐欺",
  "Sneaky lookalike": "巧妙なそっくりサイト",
  "Safe site": "安全なサイト",
  "Your privacy:": "プライバシーについて：",
- "SafeLink checks the link's address and structure right inside your browser. For a deeper check, only the link itself is sent to our secure server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't keep a record of it. See Privacy & About for details.": "SafeLink はリンクのアドレスと構造をまずブラウザ内で確認します。さらに詳しく調べる場合のみ、リンクそのものを安全なサーバーに送信し、他のセキュリティサービス（Google セーフブラウジングや VirusTotal など）にも照会します。当サービスでは記録を残しません。詳しくは「プライバシーと概要」をご覧ください。",
+ "SafeLink first checks the link's address and structure in your browser. For a deeper check, the link (without anything after “?” or “#”) is sent to our server, which also asks other security services (such as Google Safe Browsing and VirusTotal) about it. We don't store the links you check, but our host, Cloudflare, may log requests. See Privacy & About for details.": "SafeLink はリンクのアドレスと構造をまずブラウザ内で確認します。さらに詳しく調べる場合のみ、リンク（「?」や「#」より後ろは除く）を当サーバーに送信し、他のセキュリティサービス（Google セーフブラウジングや VirusTotal など）にも確認します。確認したリンクの一覧は保存しませんが、ホスティング元のCloudflareがアクセスログを記録することがあります。詳しくは「プライバシーと概要」をご覧ください。",
  "Good to know:": "ご注意：",
- "SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.": "SafeLink はまずリンク自体に書かれた危険のサインを読み取り、その後（オンライン時は）安全なバックエンドでリダイレクトをたどり、ドメインの年齢を確認します。リンクが安全であると保証できるツールはありません。",
+ "SafeLink reads the warning signs in the link itself, then (when online) follows redirects and checks the domain's age through a secure backend. No tool can guarantee a link is safe.": "SafeLink はまずリンク自体に書かれた危険な兆候を読み取り、その後（オンライン時は）安全なバックエンドでリダイレクトをたどり、ドメインの登録からの経過年数を確認します。リンクが安全であると保証できるツールはありません。",
  "— Cybersecurity for everyone, not just experts.": "— 専門家だけでなく、すべての人のためのサイバーセキュリティ。",
  "Search language…": "言語を検索…",
  "Paste a link here, e.g. https://example.com": "ここにリンクを貼り付け（例：https://example.com）",
  "Looks safe": "安全そうです",
  "Be careful": "注意してください",
- "Likely dangerous": "危険な可能性が高い",
- "We didn't find warning signs in this link's address. It still pays to be sure it's a site you meant to visit.": "このリンクのアドレスに危険のサインは見つかりませんでした。それでも、開こうとしていたサイトかどうかは必ず確認しましょう。",
+ "Likely dangerous": "危険な可能性が高いです",
+ "We didn't find warning signs in this link's address. It still pays to be sure it's a site you meant to visit.": "このリンクのアドレスに危険な兆候は見つかりませんでした。それでも、開こうとしていたサイトかどうかは必ず確認しましょう。",
  "This link has some suspicious traits. Don't enter passwords or payment details unless you're certain it's genuine.": "このリンクには怪しい特徴があります。本物だと確信できるまで、パスワードや支払い情報は入力しないでください。",
  "This link shows strong signs of a scam or fake site. We recommend you do not open it.": "このリンクには詐欺または偽サイトの強いサインがあります。開かないことをおすすめします。",
  "Lower risk": "低リスク",
  "Higher risk": "高リスク",
  "What we found": "確認できたこと",
  "What to do": "おすすめの対応",
- "If you were expecting this link, it's reasonable to proceed. When in doubt, type the company's address yourself instead of clicking.": "このリンクが届くのを予想していた場合は、先に進んでも問題ありません。迷ったら、クリックせずに会社のアドレスを自分で入力してください。",
+ "If you were expecting this link, it's reasonable to proceed. When in doubt, type the company's address yourself instead of clicking.": "このリンクが届くのを予想していた場合は、先に進んでもよいでしょう。迷ったら、クリックせずに会社のアドレスを自分で入力してください。",
  "Go to the company's official site directly rather than through this link, and never enter your login or card details on a page you reached this way.": "このリンクではなく、会社の公式サイトに直接アクセスしてください。この方法で開いたページには、ログイン情報やカード情報を絶対に入力しないでください。",
  "Don't click or enter any information. Delete the message, and if it claims to be your bank or a company, contact them using a number or app you already trust.": "クリックしたり、情報を入力したりしないでください。メッセージは削除し、銀行や会社を名乗っている場合は、すでに信頼している電話番号やアプリから連絡してください。",
  "This isn't a normal web link": "通常のウェブリンクではありません",
@@ -961,7 +1096,7 @@ const JA_BUILTIN = {
  "Uses a secure connection (HTTPS)": "安全な接続（HTTPS）を使用しています",
  "Traffic to this site is encrypted. (Note: scammers can use HTTPS too, so this alone isn't proof of safety.)": "このサイトとの通信は暗号化されています。（注意：詐欺師もHTTPSを使えるため、これだけで安全とは言えません。）",
  "Not a secure connection": "安全な接続ではありません",
- "This link uses plain HTTP, so anything you type could be seen by others. Real sign-in pages almost always use HTTPS.": "このリンクは通常のHTTPを使っているため、入力した内容が他人に見られる可能性があります。本物のログインページはほとんどHTTPSを使っています。",
+ "This link uses plain HTTP, so anything you type could be seen by others. Real sign-in pages almost always use HTTPS.": "このリンクは暗号化されていないHTTPを使っているため、入力した内容が他人に見られる可能性があります。本物のログインページはほとんどHTTPSを使っています。",
  "The address is a raw number, not a name": "アドレスが名前ではなく数字の羅列です",
  "Real companies use names like paypal.com, not bare IP addresses. This is a classic scam sign.": "本物の企業は paypal.com のような名前を使い、IPアドレスだけを使うことはありません。典型的な詐欺のサインです。",
  "Hidden destination (“@” trick)": "隠された宛先（「@」のトリック）",
@@ -970,10 +1105,10 @@ const JA_BUILTIN = {
  "The address uses look-alike foreign letters to imitate a trusted name. This is a homograph attack.": "信頼できる名前をまねるため、似た外国の文字がアドレスに使われています。ホモグラフ攻撃です。",
  "Unusual characters in the address": "アドレス内の見慣れない文字",
  "The web address contains non-standard characters that can be used to mimic a real site.": "ウェブアドレスに、本物のサイトをまねるために使われる可能性のある特殊な文字が含まれています。",
- "Urgent-sounding words in the link": "リンクに急がせる言葉が含まれています",
+ "Login or verification words in the link": "ログインや認証を促す言葉がリンクに含まれています",
  "Shortened link — destination hidden": "短縮リンク — 行き先が隠れています",
  "This is a link-shortener, so you can't see where it really goes until you open it. Be careful with shortened links from strangers.": "これは短縮リンクのため、開くまで本当の行き先がわかりません。知らない人から届いた短縮リンクには注意してください。",
- "Very long, layered address": "長くて階層の多いアドレス",
+ "Very long, layered address": "サブドメインが多いアドレス",
  "This address is stacked with many parts, which is often used to bury a fake domain inside a trusted-looking name.": "このアドレスは多くの部分が重ねられています。信頼できそうな名前の中に偽のドメインを埋め込むためによく使われる手口です。",
  "Lots of dashes in the name": "名前にハイフンが多い",
  "Real brand domains rarely use many hyphens. Several dashes can signal a hastily-made fake site.": "本物のブランドのドメインでハイフンを多用することはほとんどありません。ハイフンが多い場合、急ごしらえの偽サイトの可能性があります。",
@@ -983,7 +1118,7 @@ const JA_BUILTIN = {
  "The link is full of encoded characters (%..), which can be used to disguise its real destination.": "リンクにエンコードされた文字（%..）が多く含まれており、本当の行き先を偽装するために使われることがあります。",
  "Another web address hidden inside": "別のウェブアドレスが中に隠れています",
  "There's a second link buried inside this one — a trick used to redirect you somewhere unexpected.": "このリンクの中に別のリンクが埋め込まれています。予期しない場所に転送するための手口です。",
- "Running deeper checks (redirects, domain age)…": "詳しく確認中（リダイレクト、ドメインの年齢）…",
+ "Running deeper checks (redirects, domain age)…": "詳しく確認中（リダイレクト、ドメインの登録からの経過年数）…",
  "Reported as dangerous by Google Safe Browsing": "Google セーフブラウジングが危険と報告しています",
  "This link is on a known list of scam, malware or harmful sites. Do not open it.": "このリンクは、詐欺・マルウェア・有害サイトの既知リストに載っています。開かないでください。",
  "Brand-new website": "作られたばかりのウェブサイト",
@@ -1016,7 +1151,7 @@ const JA_BUILTIN = {
  "Something else": "その他",
  "Details (optional)": "詳細（任意）",
  "What happened? Please don't include personal details.": "何がありましたか？個人情報は含めないでください。",
- "We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; a one-way scrambled code is used only to stop duplicate reports.": "保存するのは、リンク（「?」や「#」より後ろは除く）、選択した種類、メモのみです。IPアドレスは一切保存せず、重複報告を防ぐためだけに元に戻せない変換コードを使います。",
+ "We save the link (without anything after “?” or “#”), your category and note. Your IP address is never saved; only a one-way hash code (made with a secret key) is used to stop duplicate reports.": "保存するのは、リンク（「?」や「#」より後ろは除く）、選択した種類、メモのみです。IPアドレスは一切保存せず、重複報告を防ぐために、秘密の鍵で作ったハッシュ値（元に戻せない変換コード）だけを使います。",
  "Send report": "報告を送信",
  "Thank you! Your report helps protect others.": "ありがとうございます！あなたの報告が他の人を守ります。",
  "You've already reported this site recently. Thank you!": "このサイトは最近すでに報告されています。ありがとうございます！",
@@ -1030,7 +1165,7 @@ const JA_BUILTIN = {
  "We couldn't find a web link in that text.": "そのテキストにはウェブリンクが見つかりませんでした。",
  "We found several links in your text. Choose one to check:": "テキスト内に複数のリンクが見つかりました。確認するリンクを選んでください：",
  "Check": "確認",
- "Recent checks": "最近の確認",
+ "Recent checks": "最近確認したリンク",
  "Saved only on this device.": "この端末にのみ保存されます。",
  "Clear history": "履歴を消去",
  "Stop saving": "保存を停止",
@@ -1047,8 +1182,8 @@ const JA_BUILTIN = {
  "Preview isn't available right now. Please try again later.": "現在プレビューを利用できません。後でもう一度お試しください。",
  "This link can't be previewed.": "このリンクはプレビューできません。",
  "Couldn't take a preview. The site may be offline or may block our server.": "プレビューを作成できませんでした。サイトがオフラインか、当サーバーをブロックしている可能性があります。",
- "Deeper check paused": "詳細チェックを一時停止中",
- "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "短時間に多くのリンクを確認しました。詳細チェックを再度行うには、1分ほどお待ちください。",
+ "Deeper check paused": "詳細確認を一時停止中",
+ "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "短時間に多くのリンクを確認しました。詳細確認を再度行うには、1分ほどお待ちください。",
  "This link bounces through a long chain of redirects, a common way to hide the real destination.": "このリンクは長いリダイレクトの連鎖を経由します。本当の行き先を隠すためによく使われる手口です。",
  "We couldn't reach this site": "このサイトに接続できませんでした",
  "It may be offline or already taken down. Scam sites are often short-lived.": "オフラインか、すでに閉鎖された可能性があります。詐欺サイトは短命なことが多いです。",
@@ -1058,14 +1193,15 @@ const JA_BUILTIN = {
  "Everyday websites use the standard ports. A custom port is uncommon for normal browsing.": "普通のウェブサイトは標準ポートを使います。通常の閲覧でカスタムポートはあまり見られません。",
  "That doesn't look like a valid link. Try something like https://example.com": "有効なリンクではないようです。https://example.com のように入力してみてください。",
  "Please paste a link first.": "まずリンクを貼り付けてください。",
- "No warning signs in the address": "アドレスに危険のサインはありません",
+ "No warning signs in the address": "アドレスに危険な兆候はありません",
  "The link's structure looks clean and ordinary.": "リンクの構造はきれいで、ごく普通に見えます。"
 };
 /* sentences that contain changing parts (names, numbers): matched by pattern, no network needed */
 const q=t=>t.replace(/\u201d, \u201c/g,"\u300d\u300c");
+const jaDate=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);return m?m[1]+"年"+Number(m[2])+"月"+Number(m[3])+"日":s;};
 const JA_PATTERNS = [
- [/^Issued by (.+) and valid until (\d{4}-\d{2}-\d{2})\. A valid certificate only means the connection is encrypted, not that the site is trustworthy\.$/, m=>"発行元は "+m[1]+"、有効期限は "+m[2]+" です。有効な証明書は通信が暗号化されていることを示すだけで、サイトが信頼できるという意味ではありません。"],
- [/^This site's certificate expires on (\d{4}-\d{2}-\d{2})\.$/, m=>"このサイトの証明書は "+m[1]+" に期限切れになります。"],
+ [/^Issued by (.+) and valid until (\d{4}-\d{2}-\d{2})\. A valid certificate only means the connection is encrypted, not that the site is trustworthy\.$/, m=>"発行元は "+m[1]+"、有効期限は "+jaDate(m[2])+" です。有効な証明書は通信が暗号化されていることを示すだけで、サイトが信頼できるという意味ではありません。"],
+ [/^This site's certificate expires on (\d{4}-\d{2}-\d{2})\.$/, m=>"このサイトの証明書は "+jaDate(m[1])+" に期限切れになります。"],
  [/^(\d+) security vendors on VirusTotal flag this link as malicious or phishing\.$/, m=>"VirusTotal上の"+m[1]+"社のセキュリティベンダーが、このリンクをマルウェアまたはフィッシングとして検出しています。"],
  [/^(\d+) security vendors? on VirusTotal flagged this link\. It may be a false alarm, so be careful\.$/, m=>"VirusTotal上の"+m[1]+"社のセキュリティベンダーがこのリンクを警告しています。誤検知の可能性もありますが、注意してください。"],
  [/^(\d+) (?:person has|people have) reported this site as suspicious on SafeLink\.$/, m=>m[1]+"人がSafeLinkでこのサイトを怪しいと報告しています。"],
@@ -1074,8 +1210,8 @@ const JA_PATTERNS = [
  [/^Looks like “(.+)” but isn't$/, m=>"「"+m[1]+"」に似ていますが、別物です"],
  [/^The address is a near-copy of (.+) \((.+)\)\. Tiny spelling changes or look-alike characters like this are how fake sites trick people\.$/, m=>"このアドレスは "+m[1]+"（"+m[2]+"）のほぼコピーです。このようなわずかなつづりの違いや似た文字は、偽サイトが人をだます手口です。"],
  [/^Uses the name “(.+)” in the wrong place$/, m=>"「"+m[1]+"」の名前が不自然な場所で使われています"],
- [/^“(.+?)” appears in the address, but the real owner of this link is “(.+?)” — not (.+?)\. Scammers put trusted names in the front to look official\.$/, m=>"「"+m[1]+"」がアドレスに含まれていますが、このリンクの本当の持ち主は「"+m[2]+"」であり、"+m[3]+" ではありません。詐欺師は公式に見せるため、信頼できる名前を前に置きます。"],
- [/^Words like “(.+)” are often used to rush you into signing in on a fake page\.$/, m=>"「"+q(m[1])+"」のような言葉は、偽のページで急いでログインさせるためによく使われます。"],
+ [/^“(.+?)” appears in the address, but the real owner of this link is “(.+?)” — not (.+?)\. Scammers put trusted names in the front to look official\.$/, m=>"「"+m[1]+"」がアドレスに含まれていますが、このリンクの運営元は「"+m[2]+"」であり、「"+m[3]+"」ではありません。詐欺師は公式に見せるため、信頼できる名前を前に置きます。"],
+ [/^Words like “(.+)” are often used to lure you into signing in or “verifying” on a fake page\.$/, m=>"「"+q(m[1])+"」のような言葉は、偽のページでログインや認証をさせるためによく使われます。"],
  [/^Uncommon web ending \(\.(.+)\)$/, m=>"珍しいドメインの末尾（."+m[1]+"）"],
  [/^The “\.(.+)” ending is cheap and heavily used by scam sites\. It's not automatically bad, but it's worth extra caution\.$/, m=>"「."+m[1]+"」は安価で、詐欺サイトに多用されています。必ずしも悪いわけではありませんが、特に注意が必要です。"],
  [/^Connects on an unusual port \(:(\d+)\)$/, m=>"特殊なポート（:"+m[1]+"）で接続します"],
@@ -1096,7 +1232,7 @@ const NE_PATTERNS = [
  [/^“(.+?)” appears in the address, but the real owner of this link is “(.+?)” — not (.+?)\. Scammers put trusted names in the front to look official\.$/, m=>"“"+m[1]+"” ठेगानामा देखिन्छ, तर यो लिङ्कको वास्तविक मालिक “"+m[2]+"” हो, "+m[3]+" होइन। ठगहरूले आधिकारिक देखिन भरोसायोग्य नाम अगाडि राख्छन्।"],
  [/^Uses the name “(.+)” with a suspicious ending$/, m=>"“"+m[1]+"” नाम शङ्कास्पद अन्त्यसँग प्रयोग गरिएको छ"],
  [/^“(.+)” is a real brand, but “\.(.+)” is not where it normally lives\. Scammers register the same name under cheap endings\.$/, m=>"“"+m[1]+"” वास्तविक ब्रान्ड हो, तर “."+m[2]+"” त्यसको सामान्य ठाउँ होइन। ठगहरूले उही नाम सस्तो अन्त्यमा दर्ता गर्छन्।"],
- [/^Words like “(.+)” are often used to rush you into signing in on a fake page\.$/, m=>"“"+m[1]+"” जस्ता शब्द नक्कली पृष्ठमा हतारमा साइन इन गराउन प्रायः प्रयोग गरिन्छन्।"],
+ [/^Words like “(.+)” are often used to lure you into signing in or “verifying” on a fake page\.$/, m=>"“"+m[1]+"” जस्ता शब्द नक्कली पृष्ठमा साइन इन वा “प्रमाणीकरण” गराउन प्रायः प्रयोग गरिन्छन्।"],
  [/^Uncommon web ending \(\.(.+)\)$/, m=>"असामान्य वेब अन्त्य (."+m[1]+")"],
  [/^The “\.(.+)” ending is cheap and heavily used by scam sites\. It's not automatically bad, but it's worth extra caution\.$/, m=>"“."+m[1]+"” अन्त्य सस्तो छ र ठगी साइटहरूले धेरै प्रयोग गर्छन्। यो आफैँमा खराब होइन, तर थप सावधानी अपनाउन लायक छ।"],
  [/^Connects on an unusual port \(:(\d+)\)$/, m=>"असामान्य पोर्ट (:"+m[1]+") मा जोडिन्छ"],
@@ -1110,9 +1246,124 @@ const NE_PATTERNS = [
  [/^(\d+) security vendors on VirusTotal flag this link as malicious or phishing\.$/, m=>"VirusTotal मा "+m[1]+" सुरक्षा कम्पनीले यो लिङ्कलाई खतरनाक वा फिसिङ भनी चिन्ह लगाएका छन्।"],
  [/^(\d+) security vendors? on VirusTotal flagged this link\. It may be a false alarm, so be careful\.$/, m=>"VirusTotal मा "+m[1]+" सुरक्षा कम्पनीले यो लिङ्कमा चेतावनी दिएका छन्। यो गलत अलार्म पनि हुन सक्छ, तर सावधान रहनुहोस्।"],
  [/^(\d+) (?:person has|people have) reported this site as suspicious on SafeLink\.$/, m=>"SafeLink मा "+m[1]+" जनाले यो साइटलाई शङ्कास्पद भनी रिपोर्ट गरेका छन्।"],
- [/^Issued by (.+) and valid until (\d{4}-\d{2}-\d{2})\. A valid certificate only means the connection is encrypted, not that the site is trustworthy\.$/, m=>"जारीकर्ता "+m[1]+", "+m[2]+" सम्म मान्य। मान्य प्रमाणपत्रले जडान गुप्तीकृत छ भन्ने मात्र जनाउँछ, साइट भरोसायोग्य छ भन्ने होइन।"],
+ [/^Issued by (.+) and valid until (\d{4}-\d{2}-\d{2})\. A valid certificate only means the connection is encrypted, not that the site is trustworthy\.$/, m=>"जारीकर्ता "+m[1]+", "+m[2]+" सम्म मान्य। मान्य प्रमाणपत्रले जडान इन्क्रिप्ट गरिएको छ भन्ने मात्र जनाउँछ, साइट भरोसायोग्य छ भन्ने होइन।"],
  [/^This site's certificate expires on (\d{4}-\d{2}-\d{2})\.$/, m=>"यो साइटको प्रमाणपत्रको म्याद "+m[1]+" मा सकिन्छ।"],
 ];
+/* ---------- translations for the message check, score breakdown, share and community list ---------- */
+const NE_EXTRA = {
+ "Asks for a code or PIN": "कोड वा PIN माग्छ",
+ "Real companies never ask you to send, read out or reply with a one-time code (OTP) or PIN. Scammers use it to take over your account or your money.": "असली कम्पनीले एकपटके कोड (OTP) वा PIN पठाउन, पढेर सुनाउन वा जवाफमा लेख्न कहिल्यै भन्दैन। ठगहरूले यसबाट तपाईंको खाता वा पैसा कब्जा गर्छन्।",
+ "Promises a prize or free money": "इनाम वा निःशुल्क पैसाको वाचा गर्छ",
+ "Messages that say you won something you never entered are almost always scams. They want your details or a small “fee” first.": "तपाईंले भाग नलिएको प्रतियोगिता जित्नुभयो भन्ने मेसेज प्रायः ठगी हुन्छ। उनीहरूले पहिले तपाईंको विवरण वा सानो “शुल्क” माग्छन्।",
+ "Asks you to install an app or share your screen": "एप इन्स्टल गर्न वा स्क्रिन सेयर गर्न भन्छ",
+ "Scammers ask you to install a “support” app (or an unknown APK file) to take control of your phone or see your banking.": "ठगहरूले तपाईंको फोन नियन्त्रण गर्न वा बैंकिङ हेर्न “सपोर्ट” एप (वा अज्ञात APK फाइल) इन्स्टल गर्न लगाउँछन्।",
+ "Asks for a fee, gift cards or crypto": "शुल्क, गिफ्ट कार्ड वा क्रिप्टो माग्छ",
+ "A “processing” or “customs” fee, gift-card codes or cryptocurrency is a classic way to be paid by a scam victim and can't be taken back.": "“प्रोसेसिङ” वा “भन्सार” शुल्क, गिफ्ट कार्डको कोड वा क्रिप्टोकरेन्सी ठगहरूले पैसा लिने पुरानो तरिका हो, र यो फिर्ता लिन सकिँदैन।",
+ "Threatens to block or close your account": "खाता ब्लक वा बन्द गर्ने धम्की दिन्छ",
+ "Scammers say your account will be blocked or that there was “unusual activity” so you panic and act before thinking.": "ठगहरूले तपाईंको खाता ब्लक हुन्छ वा “असामान्य गतिविधि” भयो भन्छन्, ताकि तपाईं डराएर नसोची कदम चालून्।",
+ "Asks you to verify or update your details": "विवरण प्रमाणित वा अपडेट गर्न भन्छ",
+ "Real banks and wallets rarely ask you to “verify” or “update KYC” through a link in a text message. Open the official app yourself instead.": "असली बैंक र वालेटले मेसेजको लिङ्कबाट “प्रमाणित” वा “KYC अपडेट” गर्न विरलै भन्छन्। बरु आधिकारिक एप आफैँ खोल्नुहोस्।",
+ "Pressures you to act fast": "छिटो कदम चाल्न दबाब दिन्छ",
+ "Urgent deadlines are used to stop you from thinking or asking someone you trust.": "हतार देखाउने म्याद तपाईंलाई सोच्न वा भरोसाको कसैसँग सोध्न नदिन प्रयोग गरिन्छ।",
+ "Claims to be police, a court or tax office": "प्रहरी, अदालत वा कर कार्यालय भएको दाबी गर्छ",
+ "Scammers pretend to be an authority and threaten arrest or fines. Real authorities do not demand money or codes by message.": "ठगहरू अधिकारीको नक्कल गरेर पक्राउ वा जरिवानाको धम्की दिन्छन्। असली निकायले मेसेजबाट पैसा वा कोड माग्दैन।",
+ "Parcel message with a link": "लिङ्कसहितको पार्सल मेसेज",
+ "“Your parcel couldn't be delivered” texts with a link are a very common scam. Check the courier's official app or site instead.": "“तपाईंको पार्सल डेलिभर हुन सकेन” भन्ने लिङ्कसहितका मेसेज धेरै चल्ने ठगी हुन्। बरु कुरियरको आधिकारिक एप वा साइट हेर्नुहोस्।",
+ "A link in this message looks dangerous": "यो मेसेजको एउटा लिङ्क खतरनाक देखिन्छ",
+ "One of the links in the text shows strong signs of a fake site. Check it below before doing anything.": "पाठमा भएको एउटा लिङ्कले नक्कली साइटका बलिया सङ्केत देखाउँछ। केही गर्नुअघि तल जाँच्नुहोस्।",
+ "A link in this message looks suspicious": "यो मेसेजको एउटा लिङ्क शङ्कास्पद देखिन्छ",
+ "One of the links in the text has warning signs. Check it below.": "पाठमा भएको एउटा लिङ्कमा खतराका सङ्केत छन्। तल जाँच्नुहोस्।",
+ "Names a company, but the link goes somewhere else": "कम्पनीको नाम लिन्छ, तर लिङ्क अन्तै जान्छ",
+ "The sender's email address looks fake": "पठाउनेको इमेल ठेगाना नक्कली देखिन्छ",
+ "The address imitates a trusted name. Don't reply, and don't click anything in the message.": "यो ठेगानाले भरोसायोग्य नामको नक्कल गर्छ। जवाफ नदिनुहोस्, र मेसेजमा केही पनि क्लिक नगर्नुहोस्।",
+ "The sender's email address looks odd": "पठाउनेको इमेल ठेगाना अनौठो देखिन्छ",
+ "The address has warning signs. Check who it really is before replying.": "यो ठेगानामा खतराका सङ्केत छन्। जवाफ दिनुअघि साँच्चै को हो जाँच्नुहोस्।",
+ "The sender's name and address don't match": "पठाउनेको नाम र ठेगाना मिल्दैनन्",
+ "An official-sounding sender uses a free email address": "आधिकारिक सुनिने पठाउनेले निःशुल्क इमेल ठेगाना प्रयोग गरेको छ",
+ "Real companies write from their own domain, not from a free address like Gmail or Yahoo.": "असली कम्पनीले आफ्नै डोमेनबाट लेख्छन्, Gmail वा Yahoo जस्ता निःशुल्क ठेगानाबाट होइन।",
+ "Message check": "मेसेज जाँच",
+ "No scam wording found": "ठगीका शब्द फेला परेनन्",
+ "This message looks suspicious": "यो मेसेज शङ्कास्पद देखिन्छ",
+ "This looks like a scam message": "यो ठगी मेसेज जस्तो देखिन्छ",
+ "No tool can be sure. If the message asks for money, codes or passwords, treat it as suspicious.": "कुनै टूलले पक्का भन्न सक्दैन। मेसेजले पैसा, कोड वा पासवर्ड माग्छ भने त्यसलाई शङ्कास्पद मान्नुहोस्।",
+ "Don't reply, don't click, and don't share codes. Contact the company using an app or number you already trust.": "जवाफ नदिनुहोस्, क्लिक नगर्नुहोस्, र कोड सेयर नगर्नुहोस्। पहिल्यैदेखि भरोसा गर्ने एप वा नम्बरबाट कम्पनीलाई सम्पर्क गर्नुहोस्।",
+ "Don't reply, don't click, and never share a code or PIN. Delete the message and block the sender. If you already responded, see the help page below.": "जवाफ नदिनुहोस्, क्लिक नगर्नुहोस्, र कोड वा PIN कहिल्यै सेयर नगर्नुहोस्। मेसेज मेटाएर पठाउनेलाई ब्लक गर्नुहोस्। पहिल्यै जवाफ दिइसकेको भए तलको सहायता पेज हेर्नुहोस्।",
+ "The message text is checked only on your device and is never sent. A link is sent to our server only when you check it.": "मेसेजको पाठ तपाईंको डिभाइसमै जाँचिन्छ र कहिल्यै पठाइँदैन। लिङ्क जाँच्दा मात्र त्यो हाम्रो सर्भरमा पठाइन्छ।",
+ "I already clicked it. What do I do?": "मैले क्लिक गरिसकेँ। अब के गर्ने?",
+ "I already clicked a link": "मैले लिङ्क क्लिक गरिसकेँ",
+ "Why this score?": "यो स्कोर किन?",
+ "Total (maximum 100)": "जम्मा (अधिकतम 100)",
+ "Any single “danger” finding makes the result “Likely dangerous”, whatever the total.": "कुनै एउटै “खतरा” सङ्केत भए पनि जम्मा जतिसुकै भए पनि नतिजा “सम्भवतः खतरनाक” हुन्छ।",
+ "Share this result": "यो नतिजा सेयर गर्नुहोस्",
+ "Picture saved. You can send it to family or friends.": "तस्बिर सेभ भयो। तपाईंले यसलाई परिवार वा साथीलाई पठाउन सक्नुहुन्छ।",
+ "Recently reported by the community": "समुदायले हालै रिपोर्ट गरेका साइट",
+ "Shown only when 3 or more different people reported the same site in the last 30 days. Always double-check before trusting a list.": "पछिल्ला 30 दिनमा 3 वा बढी फरक व्यक्तिले एउटै साइट रिपोर्ट गरेको अवस्थामा मात्र देखाइन्छ। कुनै पनि सूचीमा भरोसा गर्नुअघि दोहोर्‍याएर जाँच्नुहोस्।",
+ "reports": "रिपोर्ट",
+ "Website": "वेबसाइट",
+ "No warning signs found in this sender address.": "यो पठाउनेको ठेगानामा खतराका सङ्केत फेला परेनन्।"
+};
+const JA_EXTRA = {
+ "Asks for a code or PIN": "コードや暗証番号を求めています",
+ "Real companies never ask you to send, read out or reply with a one-time code (OTP) or PIN. Scammers use it to take over your account or your money.": "本物の会社が、ワンタイムパスワード（OTP）や暗証番号の送信・読み上げ・返信を求めることはありません。詐欺師はこれでアカウントやお金を乗っ取ります。",
+ "Promises a prize or free money": "賞品や無料のお金を約束しています",
+ "Messages that say you won something you never entered are almost always scams. They want your details or a small “fee” first.": "応募していない懸賞に当選したというメッセージは、ほぼ詐欺です。まず個人情報や少額の「手数料」を求められます。",
+ "Asks you to install an app or share your screen": "アプリのインストールや画面共有を求めています",
+ "Scammers ask you to install a “support” app (or an unknown APK file) to take control of your phone or see your banking.": "詐欺師は、スマホを遠隔操作したりネットバンキングを見たりするために、「サポート」アプリ（や不明なAPKファイル）のインストールを求めます。",
+ "Asks for a fee, gift cards or crypto": "手数料、ギフトカード、暗号資産を求めています",
+ "A “processing” or “customs” fee, gift-card codes or cryptocurrency is a classic way to be paid by a scam victim and can't be taken back.": "「手続き」や「関税」の手数料、ギフトカードのコード、暗号資産は、詐欺で支払わせる典型的な手口で、取り戻すことができません。",
+ "Threatens to block or close your account": "アカウントの停止や閉鎖をほのめかしています",
+ "Scammers say your account will be blocked or that there was “unusual activity” so you panic and act before thinking.": "詐欺師は「アカウントが停止される」「不審な動きがあった」と言って、あわてさせ、考える前に行動させようとします。",
+ "Asks you to verify or update your details": "情報の確認・更新を求めています",
+ "Real banks and wallets rarely ask you to “verify” or “update KYC” through a link in a text message. Open the official app yourself instead.": "本物の銀行や決済サービスが、メッセージ内のリンクから「本人確認」や「KYC更新」を求めることはまれです。公式アプリを自分で開いてください。",
+ "Pressures you to act fast": "急ぐよう圧力をかけています",
+ "Urgent deadlines are used to stop you from thinking or asking someone you trust.": "期限を急がせるのは、あなたが考えたり、信頼できる人に相談したりするのを防ぐためです。",
+ "Claims to be police, a court or tax office": "警察・裁判所・税務署を名乗っています",
+ "Scammers pretend to be an authority and threaten arrest or fines. Real authorities do not demand money or codes by message.": "詐欺師は公的機関を装い、逮捕や罰金をちらつかせます。本物の機関がメッセージでお金やコードを求めることはありません。",
+ "Parcel message with a link": "リンク付きの宅配便メッセージ",
+ "“Your parcel couldn't be delivered” texts with a link are a very common scam. Check the courier's official app or site instead.": "「荷物をお届けできませんでした」というリンク付きメッセージは、非常によくある詐欺です。代わりに配送会社の公式アプリやサイトを確認してください。",
+ "A link in this message looks dangerous": "このメッセージ内のリンクが危険そうです",
+ "One of the links in the text shows strong signs of a fake site. Check it below before doing anything.": "本文中のリンクの1つに、偽サイトの強い兆候があります。何かする前に、下で確認してください。",
+ "A link in this message looks suspicious": "このメッセージ内のリンクが怪しいです",
+ "One of the links in the text has warning signs. Check it below.": "本文中のリンクの1つに危険な兆候があります。下で確認してください。",
+ "Names a company, but the link goes somewhere else": "企業名を挙げていますが、リンクは別の場所に向かいます",
+ "The sender's email address looks fake": "送信者のメールアドレスが偽物のようです",
+ "The address imitates a trusted name. Don't reply, and don't click anything in the message.": "このアドレスは信頼できる名前をまねています。返信せず、メッセージ内の何もクリックしないでください。",
+ "The sender's email address looks odd": "送信者のメールアドレスが不自然です",
+ "The address has warning signs. Check who it really is before replying.": "このアドレスには危険な兆候があります。返信する前に、本当に誰からか確認してください。",
+ "The sender's name and address don't match": "送信者の名前とアドレスが一致しません",
+ "An official-sounding sender uses a free email address": "公式を思わせる送信者が無料のメールアドレスを使っています",
+ "Real companies write from their own domain, not from a free address like Gmail or Yahoo.": "本物の会社は、GmailやYahooのような無料アドレスではなく、自社のドメインからメールを送ります。",
+ "Message check": "メッセージの確認",
+ "No scam wording found": "詐欺らしい表現は見つかりませんでした",
+ "This message looks suspicious": "このメッセージは怪しいです",
+ "This looks like a scam message": "詐欺メッセージの可能性が高いです",
+ "No tool can be sure. If the message asks for money, codes or passwords, treat it as suspicious.": "確実だと言えるツールはありません。お金・コード・パスワードを求めるメッセージは、怪しいものとして扱ってください。",
+ "Don't reply, don't click, and don't share codes. Contact the company using an app or number you already trust.": "返信せず、クリックせず、コードを教えないでください。すでに信頼している公式アプリや電話番号から会社に連絡してください。",
+ "Don't reply, don't click, and never share a code or PIN. Delete the message and block the sender. If you already responded, see the help page below.": "返信せず、クリックせず、コードや暗証番号は絶対に教えないでください。メッセージを削除し、送信者をブロックしてください。すでに返信してしまった場合は、下のヘルプページをご覧ください。",
+ "The message text is checked only on your device and is never sent. A link is sent to our server only when you check it.": "メッセージの本文はお使いの端末上でのみ確認され、送信されることはありません。リンクは、確認を押したときにだけ当サーバーに送信されます。",
+ "I already clicked it. What do I do?": "もうクリックしてしまいました。どうすればいいですか？",
+ "I already clicked a link": "リンクをクリックしてしまった",
+ "Why this score?": "このスコアの理由",
+ "Total (maximum 100)": "合計（最大100）",
+ "Any single “danger” finding makes the result “Likely dangerous”, whatever the total.": "「危険」と判定された項目が1つでもあれば、合計点に関係なく「危険な可能性が高いです」と表示されます。",
+ "Share this result": "この結果を共有",
+ "Picture saved. You can send it to family or friends.": "画像を保存しました。家族や友だちに送れます。",
+ "Recently reported by the community": "最近コミュニティから報告されたサイト",
+ "Shown only when 3 or more different people reported the same site in the last 30 days. Always double-check before trusting a list.": "過去30日間に3人以上の別々の人が同じサイトを報告した場合にのみ表示されます。リストを信頼する前に、必ずご自身でも確認してください。",
+ "reports": "件の報告",
+ "Website": "ウェブサイト",
+ "No warning signs found in this sender address.": "この送信者アドレスに危険な兆候は見つかりませんでした。"
+};
+Object.assign(NE_BUILTIN, NE_EXTRA); Object.assign(JA_BUILTIN, JA_EXTRA);
+NE_PATTERNS.push(...[
+ [/^The message mentions “(.+)”, yet none of its links lead to that company's own website\.$/, m=>"मेसेजमा “"+m[1]+"” को उल्लेख छ, तर यसका कुनै पनि लिङ्क त्यस कम्पनीको आफ्नै वेबसाइटमा जाँदैनन्।"],
+ [/^The name says “(.+)” but the address belongs to another site\. Anyone can type any display name\.$/, m=>"नाममा “"+m[1]+"” लेखिएको छ, तर ठेगाना अर्कै साइटको हो। जसले पनि जुनसुकै देखिने नाम लेख्न सक्छ।"]
+]);
+JA_PATTERNS.push(...[
+ [/^The message mentions “(.+)”, yet none of its links lead to that company's own website\.$/, m=>"メッセージには「"+m[1]+"」とありますが、リンクはいずれもその会社の公式サイトに向かっていません。"],
+ [/^The name says “(.+)” but the address belongs to another site\. Anyone can type any display name\.$/, m=>"名前には「"+m[1]+"」とありますが、アドレスは別のサイトのものです。表示名は誰でも自由に書けます。"]
+]);
+
 const PATTERNS={ja:JA_PATTERNS,ne:NE_PATTERNS};
 const BUILTIN={ne:NE_BUILTIN,ja:JA_BUILTIN};
 function fromPatterns(code,s){
@@ -1128,14 +1379,19 @@ const listEl=document.getElementById("langList");
 function buildLangList(filter=""){
   listEl.innerHTML="";
   const f=filter.toLowerCase();
-  LANGS.filter(l=>!f||l[1].toLowerCase().includes(f)||l[2].toLowerCase().includes(f)||l[0].includes(f))
-    .forEach(([code,en,native])=>{
-      const b=document.createElement("button");
-      b.className="lang-item"+(code===currentLang?" active":"");
-      b.innerHTML="<span>"+en+"</span><small>"+native+"</small>";
-      b.addEventListener("click",()=>{closePanel();setLanguage(code,en);});
-      listEl.appendChild(b);
-    });
+  const MAIN=["en","ne","ja"];
+  const matches=LANGS.filter(l=>!f||l[1].toLowerCase().includes(f)||l[2].toLowerCase().includes(f)||l[0].includes(f));
+  const ordered=[...MAIN.map(c=>matches.find(l=>l[0]===c)).filter(Boolean),...matches.filter(l=>!MAIN.includes(l[0]))];
+  let sepDone=false;
+  ordered.forEach(([code,en,native])=>{
+    const main=MAIN.includes(code);
+    if(!main&&!sepDone){ sepDone=true; const s=document.createElement("div"); s.className="lang-sep"; s.textContent="Other languages — machine translated (Google Translate), may be imperfect"; listEl.appendChild(s); }
+    const b=document.createElement("button");
+    b.className="lang-item"+(code===currentLang?" active":"");
+    b.innerHTML="<span>"+(main?"★ ":"")+en+"</span><small>"+native+"</small>";
+    b.addEventListener("click",()=>{closePanel();setLanguage(code,en);});
+    listEl.appendChild(b);
+  });
 }
 buildLangList();
 
@@ -1206,9 +1462,21 @@ function loadCache(code){try{return JSON.parse(localStorage.getItem("sl_tr_"+cod
 function saveCache(code){try{localStorage.setItem("sl_tr_"+code,JSON.stringify(cache[code]));}catch(_){}}
 
 let translating=false, pendingLang=null;
+const PAGE_META={
+  ne:{t:"SafeLink — क्लिक गर्नुअघि लिङ्क सुरक्षित छ कि छैन जाँच्नुहोस्",d:"लिङ्क टाँस्नुहोस् वा QR कोड स्क्यान गर्नुहोस्। SafeLink ले मिल्दोजुल्दो नाम, रिडाइरेक्ट, डोमेनको उमेर, सुरक्षा प्रमाणपत्र र ठगी डाटाबेस जाँचेर सजिलो भाषामा नतिजा बुझाउँछ। निःशुल्क।"},
+  ja:{t:"SafeLink — クリックする前にリンクの安全性を確認",d:"リンクを貼り付けるかQRコードをスキャンするだけ。そっくりな名前、リダイレクト、ドメインの登録からの経過年数、セキュリティ証明書、詐欺データベースを確認し、わかりやすい言葉で結果を説明します。無料。"}
+};
+const EN_META={t:document.title,d:(document.querySelector('meta[name="description"]')||{}).content||""};
+function applyPageMeta(code){
+  const m=PAGE_META[code]||{t:EN_META.t,d:EN_META.d};
+  document.title=m.t;
+  const el=document.querySelector('meta[name="description"]'); if(el) el.setAttribute("content",m.d);
+}
 async function setLanguage(code,enName){
   captureStrings();
   currentLang=code;
+  applyPageMeta(code);
+  try{localStorage.setItem("sl_lang",code);}catch(_){}
   document.getElementById("langLabel").textContent=enName;
   document.documentElement.dir=RTL.has(code)?"rtl":"ltr";
   document.documentElement.lang=code;
@@ -1451,16 +1719,101 @@ const linksBox=document.getElementById("linksBox"), linksList=document.getElemen
 function hideLinks(){ linksBox.hidden=true; linksList.textContent=""; }
 function showLinks(links){
   linksList.textContent="";
-  links.forEach(l=>{
-    const r=analyze(l), li=document.createElement("li");
+  const rank={danger:0,warn:1,safe:2};
+  links.map(l=>({l,r:analyze(l)})).sort((a,b)=>(a.r.error?3:rank[a.r.verdict])-(b.r.error?3:rank[b.r.verdict])).forEach(({l,r})=>{   // riskiest first
+    const li=document.createElement("li");
     const dot=document.createElement("span"); dot.className="hdot "+(r.error?"":r.verdict);
+    const lbl=document.createElement("span"); lbl.className="links-lbl"; if(!r.error){ lbl.setAttribute("data-i18n",""); lbl.textContent=LABELS[r.verdict]; }
     const txt=document.createElement("span"); txt.className="links-url"; txt.textContent=l; txt.title=l;
     const b=document.createElement("button"); b.type="button"; b.className="btn small ghost"; b.setAttribute("data-i18n",""); b.textContent="Check";
-    b.addEventListener("click",()=>{ document.getElementById("url").value=l; runCheck(); });
-    li.append(dot,txt,b); linksList.appendChild(li);
+    b.addEventListener("click",()=>{ document.getElementById("url").value=l; runCheck(true); });
+    li.append(dot,lbl,txt,b); linksList.appendChild(li);
   });
   linksBox.hidden=false; reapplyLang();
 }
+
+/* ---------- message check panel ---------- */
+const msgBox=document.getElementById("msgBox");
+function hideMsg(){ msgBox.hidden=true; msgBox.textContent=""; }
+const MSGLABEL={safe:"No scam wording found",warn:"This message looks suspicious",danger:"This looks like a scam message"};
+const MSGADVICE={
+  safe:"No tool can be sure. If the message asks for money, codes or passwords, treat it as suspicious.",
+  warn:"Don't reply, don't click, and don't share codes. Contact the company using an app or number you already trust.",
+  danger:"Don't reply, don't click, and never share a code or PIN. Delete the message and block the sender. If you already responded, see the help page below."
+};
+function showMsg(m){
+  let h='<h2 data-i18n>Message check</h2><p class="msg-verdict" data-i18n>'+MSGLABEL[m.verdict]+'</p>';
+  for(const s of m.signals){
+    h+='<div class="finding"><div class="fdot '+s.sev+'">'+ICONS[s.sev]+'</div><div class="ftext"><div class="ft-title" data-i18n>'+escapeHtml(s.title)+'</div>'
+      +'<div class="ft-detail" data-i18n>'+escapeHtml(s.detail)+'</div>'+(s.extra?'<div class="ft-extra">'+escapeHtml(s.extra)+'</div>':'')+'</div></div>';
+  }
+  h+='<div class="advice">'+ICONS.bulb+'<div><div class="ft-title" data-i18n>What to do</div><p data-i18n>'+MSGADVICE[m.verdict]+'</p></div></div>';
+  if(m.verdict!=="safe") h+='<div class="act-row"><a href="after-click.html" class="after-link" data-i18n>I already clicked it. What do I do?</a></div>';
+  h+='<p class="msg-note" data-i18n>The message text is checked only on your device and is never sent. A link is sent to our server only when you check it.</p>';
+  msgBox.className="msgbox "+m.verdict; msgBox.innerHTML=h; msgBox.hidden=false; reapplyLang();
+}
+/* the help page opens in the visitor's language */
+document.addEventListener("click",e=>{
+  const a=e.target.closest&&e.target.closest("a.after-link, #footAfter"); if(!a) return;
+  a.href=(currentLang==="ja"||currentLang==="ne")?"after-click.html?lang="+currentLang:"after-click.html";
+});
+
+/* ---------- share the result as a picture (host only, never the full link) ---------- */
+function trText(s){ return currentLang==="en"?s:((cache[currentLang]&&cache[currentLang][s])||s); }
+function wrapLines(ctx,text,maxW){
+  const words=text.split(/(\s+)/), lines=[]; let cur="";
+  for(const w of words){ if(ctx.measureText(cur+w).width>maxW&&cur.trim()){ lines.push(cur.trim()); cur=w.trimStart(); } else cur+=w; }
+  if(cur.trim()) lines.push(cur.trim());
+  return lines;
+}
+async function shareResult(){
+  const r=lastResult; if(!r||r.error) return;
+  const W=1080,H=1080,c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  const col={safe:["#178a53","#1fb06c"],warn:["#c67c10","#e8a11e"],danger:["#c22f2f","#e04747"]}[r.verdict];
+  const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,col[0]); g.addColorStop(1,col[1]); x.fillStyle=g; x.fillRect(0,0,W,H);
+  const font='"Space Grotesk","Inter","Hiragino Sans","Yu Gothic UI",Meiryo,"Nirmala UI",system-ui,sans-serif';
+  x.fillStyle="#fff"; x.textAlign="center"; x.textBaseline="alphabetic";
+  x.font="700 54px "+font; x.fillText("SafeLink",W/2,130);
+  x.font="700 92px "+font; let y=420;
+  for(const ln of wrapLines(x,trText(LABELS[r.verdict]),W-160)){ x.fillText(ln,W/2,y); y+=108; }
+  x.font="500 52px "+font; y+=10;
+  let hostTxt=r.host; while(x.measureText(hostTxt).width>W-160&&hostTxt.length>8) hostTxt=hostTxt.slice(0,-2);
+  if(hostTxt!==r.host) hostTxt+="…";
+  x.fillText(hostTxt,W/2,y); y+=90;
+  x.font="400 40px "+font; x.globalAlpha=.95;
+  for(const ln of wrapLines(x,trText(HEADMSG[r.verdict]),W-200).slice(0,5)){ x.fillText(ln,W/2,y); y+=56; }
+  x.globalAlpha=.9; x.font="500 38px "+font; x.fillText("safelink.rajanrimal.com.np",W/2,H-80);
+  const blob=await new Promise(res=>c.toBlob(res,"image/png")); if(!blob) return;
+  const file=new File([blob],"safelink-result.png",{type:"image/png"});
+  const text=trText(LABELS[r.verdict])+": "+r.host+" — https://safelink.rajanrimal.com.np";
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],text}); return; }
+  }catch(err){ if(err&&err.name==="AbortError") return; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="safelink-result.png";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast("Picture saved. You can send it to family or friends.",false); reapplyLang();
+}
+document.getElementById("result").addEventListener("click",e=>{ if(e.target.closest("[data-share]")) shareResult(); });
+
+/* ---------- sites many people reported ---------- */
+(async function loadRecent(){
+  if(!/^https?:$/.test(location.protocol)) return;
+  try{
+    const res=await fetch("/api/recent",{signal:AbortSignal.timeout(8000)}); if(!res.ok) return;
+    const j=await res.json(), items=Array.isArray(j.items)?j.items.slice(0,10):[]; if(!items.length) return;
+    const list=document.getElementById("recentList"); list.textContent="";
+    for(const it of items){
+      if(typeof it.host!=="string"||!/^[a-z0-9.\-]{3,253}$/i.test(it.host)) continue;
+      const li=document.createElement("li"), b=document.createElement("button"); b.type="button"; b.className="hist-item";
+      const dot=document.createElement("span"); dot.className="hdot warn";
+      const t=document.createElement("span"); t.className="hist-url"; t.textContent=it.host+" · "+(Number(it.n)||0);
+      const u=document.createElement("span"); u.className="links-lbl"; u.setAttribute("data-i18n",""); u.textContent="reports";
+      b.append(dot,t,u); b.addEventListener("click",()=>{document.getElementById("url").value=it.host;runCheck();window.scrollTo({top:0,behavior:"smooth"});});
+      li.appendChild(b); list.appendChild(li);
+    }
+    if(list.children.length){ document.getElementById("recentBox").hidden=false; captureStrings(); reapplyLang(); }
+  }catch(_){}
+})();
 /* multi-line pastes: browsers would glue the lines together inside a one-line box, so turn line breaks into spaces */
 document.getElementById("url").addEventListener("paste",e=>{
   const t=(e.clipboardData&&e.clipboardData.getData("text"))||"";
@@ -1519,10 +1872,8 @@ histToggle.addEventListener("click",()=>{
   const raw=[q.get("url"),q.get("text"),q.get("title")].filter(Boolean).join(" ").trim();
   if(!raw) return;
   try{window.history.replaceState(null,"",location.pathname);}catch(_){}
-  const links=extractLinks(raw), box=document.getElementById("url");
-  if(links.length===1){ box.value=links[0]; runCheck(); }
-  else if(links.length>1){ box.value=raw.replace(/\s+/g," ").slice(0,300); showLinks(links); }
-  else { box.value=raw.replace(/\s+/g," ").slice(0,300); setHint("We couldn't find a web link in that text."); reapplyLang(); }
+  document.getElementById("url").value=raw.replace(/\s+/g," ").slice(0,1000);
+  runCheck();
 })();
 
 /* offline shell + installable app */
@@ -1537,6 +1888,12 @@ document.querySelector('.foot-links a[href^="privacy.html"]').addEventListener("
 
 /* init */
 captureStrings();
+(function restoreLanguage(){
+  let saved=""; try{saved=localStorage.getItem("sl_lang")||"";}catch(_){}
+  const q=new URLSearchParams(location.search).get("lang");
+  const code=q||saved; if(!code||code==="en") return;
+  const l=LANGS.find(x=>x[0]===code); if(l) setLanguage(l[0],l[1]);
+})();
 document.getElementById("url").focus();
 </script>
 </body>

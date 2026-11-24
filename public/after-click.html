@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I already clicked — what now? — SafeLink</title>
+<meta name="description" content="Clicked a suspicious link or gave away a password, OTP or card details? Step-by-step help in English, 日本語 and नेपाली.">
+<link rel="canonical" href="https://safelink.rajanrimal.com.np/after-click">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="theme-color" content="#12294A">
+<style>
+  :root{--ink:#12294A;--ink-soft:#33455f;--canvas:#eef2f7;--surface:#fff;--line:#dbe3ec;--muted:#64717f;--accent:#1795ad;--accent-dark:#127e93;--accent-tint:#e4f4f7;--danger:#d83a3a;--danger-tint:#fbe8e8;--radius:16px}
+  @media (prefers-color-scheme:dark){:root{--ink:#e8eef7;--ink-soft:#bccadb;--canvas:#0d1624;--surface:#15233a;--line:#2a3b55;--muted:#93a4ba;--accent:#3cb6cf;--accent-dark:#6fd0e3;--accent-tint:#173446;--danger-tint:#3a1d22}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Inter",system-ui,-apple-system,"Segoe UI","Hiragino Sans","Yu Gothic UI",Meiryo,"Nirmala UI",Roboto,sans-serif;color:var(--ink);background:var(--canvas);line-height:1.65}
+  .wrap{max-width:820px;margin:0 auto;padding:0 20px}
+  header{padding:20px 0 6px}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .bar img{height:42px;width:auto;display:block}
+  @media (prefers-color-scheme:dark){.bar img{background:#fff;border-radius:10px;padding:2px 10px}}
+  .langs{display:flex;gap:6px}
+  .langs button{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:.88rem;padding:7px 13px;border-radius:10px;cursor:pointer}
+  .langs button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+  .langs button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  main{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:8px 26px 28px;margin:18px 0 40px}
+  h1{font-size:1.7rem;line-height:1.2;margin:24px 0 4px}
+  h2{font-size:1.12rem;margin:30px 0 6px}
+  p,li{color:var(--ink-soft);font-size:.96rem}
+  ul,ol{padding-inline-start:1.3rem;margin:6px 0}
+  li{margin:5px 0}
+  a{color:var(--accent-dark)}
+  .back{display:inline-block;margin:6px 0 0;font-weight:600;text-decoration:none}
+  .back:hover{text-decoration:underline}
+  .urgent{background:var(--danger-tint);border:1px solid #f0c4c4;border-radius:12px;padding:12px 14px;margin:14px 0}
+  .urgent p{margin:0;color:var(--ink);font-weight:600}
+  .note{background:var(--accent-tint);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0}
+  [data-lang]{display:none}
+  [data-lang].on{display:block}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <a href="./" aria-label="SafeLink"><img src="logo.webp" alt="SafeLink — Trusted web checker" width="635" height="216"></a>
+    <div class="langs" role="group" aria-label="Language">
+      <button type="button" data-pick="en">English</button>
+      <button type="button" data-pick="ja">日本語</button>
+      <button type="button" data-pick="ne">नेपाली</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><main>
+
+<!-- ======================= ENGLISH ======================= -->
+<div data-lang="en">
+  <h1>I already clicked. What now?</h1>
+  <p>Don't panic and don't feel embarrassed — scams fool careful people every day. What matters is acting quickly. Find what happened to you below.</p>
+  <a class="back" href="./">← Back to SafeLink</a>
+
+  <div class="urgent"><p>If money has already left your account, call your bank or wallet provider right now, before anything else.</p></div>
+
+  <h2>1. I only clicked or opened the page</h2>
+  <ul>
+    <li>Close the page. Do not type anything into it.</li>
+    <li>If a file was downloaded, don't open it. Delete it.</li>
+    <li>Update your phone or computer and run a security scan (Google Play Protect, Microsoft Defender, or your antivirus).</li>
+    <li>Usually nothing more is needed. Just stay alert for strange messages for the next few days.</li>
+  </ul>
+
+  <h2>2. I typed a password</h2>
+  <ol>
+    <li>Change that password immediately, on the real website or app (type the address yourself, don't use the link).</li>
+    <li>If you use the same password anywhere else, change it there too. Use a different password for each important account.</li>
+    <li>Turn on two-step verification (2FA) for email, bank, social media and wallet accounts.</li>
+    <li>In the account's security settings, sign out of all other devices and check for unknown logins or forwarding rules (email).</li>
+  </ol>
+
+  <h2>3. I gave my card, bank or wallet details (including OTP or PIN)</h2>
+  <ol>
+    <li>Call your bank, card company or wallet provider (eSewa, Khalti, IME Pay, etc.) using the number on your card or in the official app — not a number from the message. Ask them to block the card or freeze the account.</li>
+    <li>Never share a one-time code (OTP) or PIN with anyone. Real companies never ask for it.</li>
+    <li>Check your recent transactions and report any you don't recognise.</li>
+    <li>Keep screenshots of the message, the link, and the payment receipts. They help the bank and the police.</li>
+  </ol>
+
+  <h2>4. I installed an app or file, or let someone control my device</h2>
+  <ol>
+    <li>Turn on airplane mode / disconnect from the internet.</li>
+    <li>Uninstall the app (Settings → Apps). Remove any "device administrator" or "accessibility" permission it asked for.</li>
+    <li>Run a security scan, or back up your photos and reset the device to factory settings if you are unsure.</li>
+    <li>Then change your passwords from a different, clean device, and call your bank.</li>
+  </ol>
+
+  <h2>5. Report it</h2>
+  <ul>
+    <li>Report the link to SafeLink ("Report this link as a scam" in the result) to help protect others.</li>
+    <li>Report the message in the app where you got it (WhatsApp, Messenger, SMS, email) and block the sender.</li>
+    <li><b>Nepal:</b> contact the Nepal Police Cyber Bureau, or your nearest police station, and tell your bank.</li>
+    <li><b>Japan:</b> police consultation line <b>#9110</b>, or the consumer hotline <b>188</b>. Contact your bank or card company too.</li>
+  </ul>
+
+  <div class="note"><p>SafeLink reads warning signs and cannot undo what happened. This page is general safety advice, not legal or financial advice.</p></div>
+</div>
+
+<!-- ======================= 日本語 ======================= -->
+<div data-lang="ja" lang="ja">
+  <h1>もうクリックしてしまったら？</h1>
+  <p>慌てなくて大丈夫です。恥ずかしいことでもありません。詐欺は注意深い人でも毎日のようにだまされています。大切なのは、すぐに行動することです。あてはまる状況を下から選んでください。</p>
+  <a class="back" href="./">← SafeLink に戻る</a>
+
+  <div class="urgent"><p>すでにお金が引き出されている場合は、何よりもまず、今すぐ銀行や決済サービスに電話してください。</p></div>
+
+  <h2>1. リンクを開いただけ</h2>
+  <ul>
+    <li>ページを閉じ、何も入力しないでください。</li>
+    <li>ファイルがダウンロードされた場合は、開かずに削除してください。</li>
+    <li>スマホやパソコンを最新の状態にして、セキュリティスキャン（Google Play プロテクト、Microsoft Defender、ウイルス対策ソフトなど）を実行してください。</li>
+    <li>通常はこれ以上の対応は不要です。数日間は、不審なメッセージに注意してください。</li>
+  </ul>
+
+  <h2>2. パスワードを入力してしまった</h2>
+  <ol>
+    <li>公式サイトやアプリで、すぐにそのパスワードを変更してください（メッセージのリンクではなく、ご自身でアドレスを入力します）。</li>
+    <li>同じパスワードを他のサービスでも使っている場合は、そちらも変更してください。重要なアカウントごとに別のパスワードを使いましょう。</li>
+    <li>メール、銀行、SNS、ウォレットなどで2段階認証を有効にしてください。</li>
+    <li>アカウントのセキュリティ設定で、他の端末からすべてログアウトし、身に覚えのないログインや（メールの）転送設定がないか確認してください。</li>
+  </ol>
+
+  <h2>3. カード・口座情報（認証コードや暗証番号を含む）を入力してしまった</h2>
+  <ol>
+    <li>カードの裏面や公式アプリに記載の番号で、銀行・カード会社・決済サービスに電話し、カードの停止や口座の凍結を依頼してください（メッセージに書かれた番号には電話しないでください）。</li>
+    <li>ワンタイムパスワードや暗証番号は、誰にも教えないでください。本物の会社が尋ねることはありません。</li>
+    <li>最近の取引を確認し、身に覚えのないものは報告してください。</li>
+    <li>メッセージ、リンク、支払いの控えをスクリーンショットなどで保存してください。銀行や警察への相談に役立ちます。</li>
+  </ol>
+
+  <h2>4. アプリやファイルをインストールした／遠隔操作を許可した</h2>
+  <ol>
+    <li>機内モードにするなど、ネットワークから切断してください。</li>
+    <li>そのアプリをアンインストールしてください（設定 → アプリ）。求められた「デバイス管理者」や「ユーザー補助」の権限も解除してください。</li>
+    <li>セキュリティスキャンを実行するか、不安な場合は写真などをバックアップして端末を初期化してください。</li>
+    <li>その後、別の安全な端末からパスワードを変更し、銀行にも連絡してください。</li>
+  </ol>
+
+  <h2>5. 報告する</h2>
+  <ul>
+    <li>SafeLink の結果画面にある「このリンクを詐欺として報告」から報告すると、他の人を守る助けになります。</li>
+    <li>届いたアプリ（LINE、SMS、メールなど）でもメッセージを通報し、送信者をブロックしてください。</li>
+    <li><b>日本：</b>警察相談専用電話 <b>#9110</b>、または消費者ホットライン <b>188</b>。銀行やカード会社にも連絡してください。</li>
+    <li><b>ネパール：</b>ネパール警察サイバー局または最寄りの警察署と、利用中の銀行に連絡してください。</li>
+  </ul>
+
+  <div class="note"><p>SafeLink は危険な兆候を読み取るツールで、起きてしまったことを元に戻すことはできません。このページは一般的な安全のための助言であり、法律・金融の助言ではありません。</p></div>
+</div>
+
+<!-- ======================= नेपाली ======================= -->
+<div data-lang="ne" lang="ne">
+  <h1>मैले क्लिक गरिसकेँ, अब के गर्ने?</h1>
+  <p>नडराउनुहोस्, लाज पनि नमान्नुहोस् — होसियार मानिसहरू पनि हरेक दिन ठगीमा पर्छन्। महत्त्वपूर्ण कुरा छिटो कदम चाल्नु हो। तलबाट आफूलाई परेको अवस्था छान्नुहोस्।</p>
+  <a class="back" href="./">← SafeLink मा फर्कनुहोस्</a>
+
+  <div class="urgent"><p>यदि खाताबाट पैसा गइसकेको छ भने अरू सबै कुरा अघि, अहिले नै आफ्नो बैंक वा वालेट सेवा प्रदायकलाई फोन गर्नुहोस्।</p></div>
+
+  <h2>१. मैले लिङ्क क्लिक गरेँ / पेज खोलेँ मात्र</h2>
+  <ul>
+    <li>पेज बन्द गर्नुहोस्। त्यसमा केही पनि नलेख्नुहोस्।</li>
+    <li>कुनै फाइल डाउनलोड भयो भने नखोल्नुहोस्, मेटाइदिनुहोस्।</li>
+    <li>फोन वा कम्प्युटर अपडेट गर्नुहोस् र सुरक्षा स्क्यान (Google Play Protect, Microsoft Defender वा एन्टिभाइरस) चलाउनुहोस्।</li>
+    <li>प्रायः यति नै पर्याप्त हुन्छ। केही दिन अनौठा मेसेजप्रति सतर्क रहनुहोस्।</li>
+  </ul>
+
+  <h2>२. मैले पासवर्ड लेखेँ</h2>
+  <ol>
+    <li>तुरुन्तै असली वेबसाइट वा एपमा गएर त्यो पासवर्ड बदल्नुहोस् (मेसेजको लिङ्कबाट होइन, आफैँ ठेगाना टाइप गरेर)।</li>
+    <li>त्यही पासवर्ड अरू ठाउँमा पनि प्रयोग गर्नुभएको छ भने त्यहाँ पनि बदल्नुहोस्। महत्त्वपूर्ण खातामा फरक-फरक पासवर्ड राख्नुहोस्।</li>
+    <li>इमेल, बैंक, सामाजिक सञ्जाल र वालेटमा दुई-चरण प्रमाणीकरण (2FA) खोल्नुहोस्।</li>
+    <li>खाताको सुरक्षा सेटिङमा गएर अन्य सबै डिभाइसबाट लगआउट गर्नुहोस् र अपरिचित लगइन वा (इमेलमा) फरवार्डिङ नियम छ कि जाँच्नुहोस्।</li>
+  </ol>
+
+  <h2>३. मैले कार्ड, बैंक वा वालेट विवरण (OTP वा PIN सहित) दिएँ</h2>
+  <ol>
+    <li>आफ्नो कार्डमा लेखिएको वा आधिकारिक एपमा भएको नम्बरबाट बैंक, कार्ड कम्पनी वा वालेट सेवा (eSewa, Khalti, IME Pay आदि) लाई फोन गरी कार्ड ब्लक वा खाता फ्रिज गर्न भन्नुहोस् — मेसेजमा आएको नम्बरमा होइन।</li>
+    <li>एकपटके कोड (OTP) वा PIN कसैलाई नदिनुहोस्। असली कम्पनीले कहिल्यै माग्दैन।</li>
+    <li>हालैका कारोबार हेर्नुहोस् र आफूले नगरेको कारोबार भए रिपोर्ट गर्नुहोस्।</li>
+    <li>मेसेज, लिङ्क र भुक्तानीको रसिदको स्क्रिनसट राख्नुहोस्। यसले बैंक र प्रहरीलाई मद्दत गर्छ।</li>
+  </ol>
+
+  <h2>४. मैले एप वा फाइल इन्स्टल गरेँ, वा कसैलाई मेरो डिभाइस चलाउन दिएँ</h2>
+  <ol>
+    <li>एयरप्लेन मोड खोल्नुहोस् / इन्टरनेटबाट काट्नुहोस्।</li>
+    <li>त्यो एप अनइन्स्टल गर्नुहोस् (Settings → Apps)। उसले मागेको "device administrator" वा "accessibility" अनुमति हटाउनुहोस्।</li>
+    <li>सुरक्षा स्क्यान चलाउनुहोस्, वा शंका लागे फोटो आदि ब्याकअप गरेर डिभाइस फ्याक्ट्री रिसेट गर्नुहोस्।</li>
+    <li>त्यसपछि अर्को सुरक्षित डिभाइसबाट पासवर्ड बदल्नुहोस् र बैंकलाई फोन गर्नुहोस्।</li>
+  </ol>
+
+  <h2>५. रिपोर्ट गर्नुहोस्</h2>
+  <ul>
+    <li>अरूलाई जोगाउन SafeLink को नतिजामा रहेको "यो लिङ्कलाई ठगीको रूपमा रिपोर्ट गर्नुहोस्" प्रयोग गर्नुहोस्।</li>
+    <li>जहाँबाट मेसेज आयो (WhatsApp, Messenger, SMS, इमेल) त्यहीँ रिपोर्ट गर्नुहोस् र पठाउनेलाई ब्लक गर्नुहोस्।</li>
+    <li><b>नेपाल:</b> नेपाल प्रहरीको साइबर ब्युरो वा नजिकको प्रहरी कार्यालयमा सम्पर्क गर्नुहोस्, र आफ्नो बैंकलाई पनि जानकारी दिनुहोस्।</li>
+    <li><b>जापान:</b> प्रहरी परामर्श नम्बर <b>#9110</b> वा उपभोक्ता हटलाइन <b>188</b>। बैंक वा कार्ड कम्पनीलाई पनि सम्पर्क गर्नुहोस्।</li>
+  </ul>
+
+  <div class="note"><p>SafeLink ले खतराका संकेत पढ्छ; भइसकेको कुरा फर्काउन सक्दैन। यो पेज सामान्य सुरक्षा सल्लाह हो, कानुनी वा आर्थिक सल्लाह होइन।</p></div>
+</div>
+
+</main></div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll("[data-lang]"), btns=document.querySelectorAll("[data-pick]");
+  var titles={en:"I already clicked — what now? — SafeLink",ja:"もうクリックしてしまったら？ — SafeLink",ne:"क्लिक गरिसकेँ, अब के गर्ने? — SafeLink"};
+  function pick(l){
+    if(!titles[l]) l="en";
+    blocks.forEach(function(b){b.classList.toggle("on",b.getAttribute("data-lang")===l);});
+    btns.forEach(function(b){b.setAttribute("aria-pressed",String(b.getAttribute("data-pick")===l));});
+    document.documentElement.lang=l; document.title=titles[l];
+  }
+  btns.forEach(function(b){b.addEventListener("click",function(){pick(b.getAttribute("data-pick"));});});
+  var saved=""; try{saved=localStorage.getItem("sl_lang")||"";}catch(e){}
+  btns.forEach(function(b){b.addEventListener("click",function(){try{localStorage.setItem("sl_lang",b.getAttribute("data-pick"));}catch(e){}});});
+  var q=new URLSearchParams(location.search).get("lang"), nav=(navigator.language||"en").slice(0,2);
+  pick(q||(titles[saved]?saved:(nav==="ja"||nav==="ne"?nav:"en")));
+})();
+</script>
+</body>
+</html>

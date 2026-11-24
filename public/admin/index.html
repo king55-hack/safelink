@@ -54,6 +54,7 @@
         <input type="text" id="q" placeholder="Filter by site name…">
         <button id="search" type="button">Search</button>
         <button id="reload" type="button" class="ghost">Reload</button>
+        <button id="csv" type="button" class="ghost">Download CSV</button>
         <button id="logout" type="button" class="ghost">Sign out</button>
         <span class="muted" id="total"></span>
       </div>
@@ -70,6 +71,14 @@
         <button id="next" type="button" class="ghost">Older →</button>
         <span class="muted" id="page"></span>
       </div>
+    </div>
+    <div class="card" style="overflow:auto">
+      <strong>Contact form messages</strong> <span class="muted">(removal requests, mistakes, questions; latest 100)</span>
+      <table>
+        <thead><tr><th>#</th><th>When (UTC)</th><th>Type</th><th>Lang</th><th>Message</th><th>Reply to</th><th></th></tr></thead>
+        <tbody id="msgs"></tbody>
+      </table>
+      <p class="muted" id="msgsEmpty" hidden>No messages.</p>
     </div>
   </div>
 </div>
@@ -92,7 +101,7 @@
       if(r.status===503){ show(false); $("loginErr").textContent="Admin is not enabled on the server (set the ADMIN_TOKEN secret, 16+ characters)."; return; }
       if(r.status===429){ show(false); $("loginErr").textContent="Too many attempts. Wait a minute."; return; }
       if(r.status!==200){ show(false); $("loginErr").textContent="Error "+r.status; return; }
-      show(true); $("loginErr").textContent="";
+      show(true); $("loginErr").textContent=""; loadMsgs();
       var j=r.json; $("total").textContent=j.total+" report"+(j.total===1?"":"s");
       var top=$("top"); top.textContent="";
       (j.topHosts||[]).forEach(function(t){
@@ -123,6 +132,24 @@
     }).catch(function(){ $("loginErr").textContent="Network error."; });
   }
 
+  function loadMsgs(){
+    api("/contact").then(function(r){
+      if(r.status!==200) return;
+      var tb=$("msgs"); tb.textContent=""; var items=r.json.items||[];
+      $("msgsEmpty").hidden=items.length>0;
+      items.forEach(function(it){
+        var tr=document.createElement("tr");
+        tr.appendChild(td(it.id));
+        tr.appendChild(td(new Date(it.created_at*1000).toISOString().replace("T"," ").slice(0,16)));
+        tr.appendChild(td(it.kind)); tr.appendChild(td(it.lang));
+        tr.appendChild(td(it.message,"note")); tr.appendChild(td(it.contact,"url"));
+        var act=document.createElement("td"), d=document.createElement("button");
+        d.type="button"; d.className="del"; d.textContent="Delete";
+        d.addEventListener("click",function(){ if(confirm("Delete message #"+it.id+"?")) api("/contact/"+it.id,{method:"DELETE"}).then(loadMsgs); });
+        act.appendChild(d); tr.appendChild(act); tb.appendChild(tr);
+      });
+    });
+  }
   $("go").addEventListener("click",function(){
     var t=$("token").value.trim(); if(!t) return;
     try{sessionStorage.setItem(KEY,t);}catch(e){}
@@ -132,6 +159,15 @@
   $("search").addEventListener("click",function(){ filter=$("q").value.trim().toLowerCase(); offset=0; load(); });
   $("q").addEventListener("keydown",function(e){if(e.key==="Enter")$("search").click();});
   $("reload").addEventListener("click",load);
+  $("csv").addEventListener("click",function(){
+    fetch("/api/admin/export.csv",{headers:{"Authorization":"Bearer "+token()}}).then(function(r){
+      if(!r.ok) throw new Error(r.status);
+      return r.blob();
+    }).then(function(b){
+      var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="safelink-reports.csv";
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+    }).catch(function(){ $("total").textContent="CSV download failed."; });
+  });
   $("logout").addEventListener("click",function(){ try{sessionStorage.removeItem(KEY);}catch(e){} show(false); });
   $("prev").addEventListener("click",function(){ offset=Math.max(0,offset-PAGE); load(); });
   $("next").addEventListener("click",function(){ offset+=PAGE; load(); });

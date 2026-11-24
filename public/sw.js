@@ -1,7 +1,7 @@
 /* SafeLink service worker: makes the app installable and keeps the page shell available offline.
    It never touches /api/*, /admin/ or any URL with a query string (e.g. text shared from another app). */
-const CACHE = "safelink-v1";
-const SHELL = ["./", "logo.webp", "favicon.png", "manifest.webmanifest", "vendor/jsQR.min.js"];
+const CACHE = "safelink-v2";
+const SHELL = ["./", "logo.webp", "favicon.png", "manifest.webmanifest", "vendor/jsQR.min.js", "privacy.html", "after-click.html"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
