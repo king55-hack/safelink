@@ -119,3 +119,20 @@ test("pageParams clamps input", () => {
   assert.deepEqual(pageParams(new URLSearchParams("limit=abc&offset=1.5")), { limit: 100, offset: 0 });
   assert.deepEqual(pageParams(new URLSearchParams("limit=0")), { limit: 1, offset: 0 });
 });
+
+import { allowPreviewRequest, PREVIEW_SKIP_TYPES } from "../src/lib.ts";
+
+test("allowPreviewRequest only lets public http(s) through", () => {
+  for (const ok of ["https://example.org/", "http://paypa1.com/login", "https://cdn.site.com/a.js?x=1", "data:image/png;base64,AAAA"])
+    assert.equal(allowPreviewRequest(ok), true, ok);
+  for (const bad of [
+    "http://127.0.0.1/", "http://169.254.169.254/latest/meta-data", "http://[::1]/", "http://10.0.0.5/admin", "http://localhost/",
+    "http://intranet/", "https://site.com:8443/", "file:///etc/passwd", "ftp://a.com/x", "javascript:alert(1)", "chrome://settings", "not a url", "",
+  ]) assert.equal(allowPreviewRequest(bad), false, bad);
+});
+
+test("preview skips heavy resource types", () => {
+  assert.ok((PREVIEW_SKIP_TYPES as readonly string[]).includes("media"));
+  assert.ok(!(PREVIEW_SKIP_TYPES as readonly string[]).includes("document"));
+  assert.ok(!(PREVIEW_SKIP_TYPES as readonly string[]).includes("image"));
+});

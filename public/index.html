@@ -221,6 +221,16 @@
   .foot-links a{color:var(--accent-dark);font-weight:600;font-size:.9rem;text-decoration:none}
   .foot-links a:hover{text-decoration:underline}
 
+  .pvbox{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px 18px;text-align:start}
+  .pvbox[hidden]{display:none}
+  .pv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .pv-head h2{font-family:var(--disp);font-size:1.1rem;margin:0}
+  .pv-img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#f3f6f9}
+  .pv-cap{margin:10px 0 0;font-size:.82rem;color:var(--muted)}
+  .pv-msg{margin:0;font-size:.92rem;color:var(--ink-soft);display:flex;align-items:center;gap:8px}
+  .pv-msg.err{color:var(--danger);font-weight:600}
+  .pv-msg .spin{border-color:rgba(18,41,74,.2);border-top-color:var(--accent);margin:0}
+
   .deep{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:.88rem;color:var(--muted)}
   .deep .spin{border-color:rgba(18,41,74,.2);border-top-color:var(--accent);margin:0}
 
@@ -301,6 +311,11 @@
   </section>
 
   <section id="result" aria-live="polite"></section>
+
+  <section id="pvBox" class="pvbox" hidden aria-labelledby="pvTitle">
+    <div class="pv-head"><h2 id="pvTitle" data-i18n>Safe preview</h2><button class="linkbtn" id="pvClose" type="button" data-i18n>Close</button></div>
+    <div id="pvBody" aria-live="polite"></div>
+  </section>
 
   <section id="reportBox" class="reportbox" hidden aria-labelledby="rpTitle">
     <h2 id="rpTitle" data-i18n>Report a scam</h2>
@@ -640,6 +655,7 @@ function render(r,keepHint){
   }
   const a=ADVICE[r.verdict];
   html+='<div class="advice">'+ICONS.bulb+'<div><div class="ft-title" data-i18n>'+a.t+'</div><p data-i18n>'+a.p+'</p></div></div>';
+  if(/^https?:\/\//i.test(r.url)) html+='<div class="rp-open-row"><button class="linkbtn" type="button" data-preview="1"><span data-i18n>Show a safe preview</span></button></div>';
   html+='<div class="rp-open-row"><button class="linkbtn" type="button" data-report="1"><span data-i18n>Report this link as a scam</span></button></div>';
   html+='</div>';
 
@@ -657,7 +673,7 @@ function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","
 function runCheck(){
   const v=document.getElementById("url").value;
   if(!v.trim()){setHint("Please paste a link first.");reapplyLang();return;}
-  hideLinks();
+  hideLinks(); hidePreview();
   if(/\s/.test(v.trim())){                     // a whole message was pasted: find the links in it
     const links=extractLinks(v);
     if(links.length===0){ setHint("We couldn't find a web link in that text."); reapplyLang(); return; }
@@ -897,6 +913,13 @@ const NE_BUILTIN = {
  "Everyday websites use the standard ports. A custom port is uncommon for normal browsing.": "सामान्य वेबसाइटले मानक पोर्ट प्रयोग गर्छन्। सामान्य ब्राउजिङमा अनुकूलित पोर्ट असामान्य हो।",
  "That doesn't look like a valid link. Try something like https://example.com": "यो मान्य लिङ्क जस्तो देखिँदैन। https://example.com जस्तै प्रयास गर्नुहोस्।",
  "Please paste a link first.": "कृपया पहिले लिङ्क टाँस्नुहोस्।",
+ "Safe preview": "सुरक्षित पूर्वावलोकन",
+ "Show a safe preview": "सुरक्षित पूर्वावलोकन देखाउनुहोस्",
+ "Taking a preview…": "पूर्वावलोकन बनाउँदै…",
+ "A screenshot taken by our server. Nothing from this site ran on your device. The page may look different when opened normally.": "यो हाम्रो सर्भरले खिचेको स्क्रिनसट हो। यो साइटको केही पनि तपाईंको उपकरणमा चलेको छैन। सामान्य रूपमा खोल्दा पृष्ठ फरक देखिन सक्छ।",
+ "Preview isn't available right now. Please try again later.": "अहिले पूर्वावलोकन उपलब्ध छैन। कृपया पछि फेरि प्रयास गर्नुहोस्।",
+ "This link can't be previewed.": "यो लिङ्कको पूर्वावलोकन गर्न सकिँदैन।",
+ "Couldn't take a preview. The site may be offline or may block our server.": "पूर्वावलोकन बनाउन सकिएन। साइट अफलाइन वा हाम्रो सर्भर ब्लक गरेको हुन सक्छ।",
  "Deeper check paused": "थप जाँच रोकिएको",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "तपाईंले छोटो समयमा धेरै लिङ्क जाँच्नुभयो। थप जाँच फेरि चलाउन कृपया एक मिनेट पर्खनुहोस्।",
  "No warning signs in the address": "ठेगानामा कुनै खतराका सङ्केत छैनन्",
@@ -1017,6 +1040,13 @@ const JA_BUILTIN = {
  "This site's secure (HTTPS) connection could not be set up safely. Its certificate may be expired, self-signed or issued for a different website, so don't enter any information.": "このサイトの安全な接続（HTTPS）を確立できませんでした。証明書の期限切れ、自己署名、または別のサイト用に発行されている可能性があります。情報は入力しないでください。",
  "Valid security certificate": "有効なセキュリティ証明書",
  "Security certificate expires soon": "セキュリティ証明書の期限が近づいています",
+ "Safe preview": "安全なプレビュー",
+ "Show a safe preview": "安全なプレビューを表示",
+ "Taking a preview…": "プレビューを作成中…",
+ "A screenshot taken by our server. Nothing from this site ran on your device. The page may look different when opened normally.": "当サーバーが撮影したスクリーンショットです。このサイトのコードはお使いの端末では実行されていません。通常に開くと表示が異なる場合があります。",
+ "Preview isn't available right now. Please try again later.": "現在プレビューを利用できません。後でもう一度お試しください。",
+ "This link can't be previewed.": "このリンクはプレビューできません。",
+ "Couldn't take a preview. The site may be offline or may block our server.": "プレビューを作成できませんでした。サイトがオフラインか、当サーバーをブロックしている可能性があります。",
  "Deeper check paused": "詳細チェックを一時停止中",
  "You've checked many links in a short time. Please wait a minute to run the deeper check again.": "短時間に多くのリンクを確認しました。詳細チェックを再度行うには、1分ほどお待ちください。",
  "This link bounces through a long chain of redirects, a common way to hide the real destination.": "このリンクは長いリダイレクトの連鎖を経由します。本当の行き先を隠すためによく使われる手口です。",
@@ -1320,6 +1350,43 @@ document.getElementById("qrCam").addEventListener("click",startCamera);
 document.getElementById("qrUpload").addEventListener("click",()=>qrFile.click());
 qrFile.addEventListener("change",()=>{const f=qrFile.files&&qrFile.files[0];qrFile.value="";if(f)scanImageFile(f);});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!qrPanel.hidden)closeQR();});
+
+/* ---------- safe preview (a screenshot taken by our server; nothing from the site runs on your device) ---------- */
+const pvBox=document.getElementById("pvBox"), pvBody=document.getElementById("pvBody");
+let pvSeq=0;
+function pvSay(msg,cls,spin){
+  pvBody.textContent="";
+  const p=document.createElement("p"); p.className="pv-msg"+(cls?" "+cls:"");
+  if(spin){const s=document.createElement("span"); s.className="spin"; p.appendChild(s);}
+  const t=document.createElement("span"); t.setAttribute("data-i18n",""); t.dataset.en=msg; t.textContent=msg; p.appendChild(t);
+  pvBody.appendChild(p); reapplyLang();
+}
+function hidePreview(){ pvSeq++; pvBox.hidden=true; pvBody.textContent=""; }
+async function showPreview(url){
+  const my=++pvSeq;
+  pvBox.hidden=false; pvSay("Taking a preview\u2026","",true);
+  pvBox.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"});
+  try{
+    const res=await fetch("/api/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url}),signal:AbortSignal.timeout(45000)});
+    if(my!==pvSeq) return;
+    if(res.status===429){ pvSay("Preview isn't available right now. Please try again later.","err"); return; }
+    if(res.status===400){ pvSay("This link can't be previewed.","err"); return; }
+    if(!res.ok){ pvSay("Couldn't take a preview. The site may be offline or may block our server.","err"); return; }
+    const j=await res.json();
+    if(my!==pvSeq) return;
+    if(!j.image||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(j.image)){ pvSay("Couldn't take a preview. The site may be offline or may block our server.","err"); return; }
+    pvBody.textContent="";
+    const img=document.createElement("img"); img.className="pv-img"; img.alt="Screenshot of the page"; img.src=j.image;
+    const cap=document.createElement("p"); cap.className="pv-cap"; cap.setAttribute("data-i18n","");
+    cap.dataset.en="A screenshot taken by our server. Nothing from this site ran on your device. The page may look different when opened normally.";
+    cap.textContent=cap.dataset.en;
+    pvBody.append(img,cap); reapplyLang();
+  }catch(_){ if(my===pvSeq) pvSay("Couldn't take a preview. The site may be offline or may block our server.","err"); }
+}
+document.getElementById("pvClose").addEventListener("click",hidePreview);
+document.getElementById("result").addEventListener("click",e=>{
+  if(e.target.closest("[data-preview]")){ const u=document.getElementById("url").value.trim(); if(u) showPreview(u); }
+});
 
 /* ---------- Report a scam ---------- */
 /* Cloudflare Turnstile *site* key (public by design; the secret lives only on the Worker). Only used on the live hostname,

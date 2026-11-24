@@ -145,3 +145,19 @@ export function pageParams(sp: URLSearchParams): { limit: number; offset: number
   };
   return { limit: Math.max(1, n(sp.get("limit"), 100, 200)), offset: n(sp.get("offset"), 0, 1_000_000) };
 }
+
+/* ---------------- screenshot preview ---------------- */
+
+/**
+ * Every request the preview browser makes (the page, redirects, images, scripts...) is checked with this.
+ * Only public http(s) hostnames on standard ports are allowed; data: images are fine.
+ */
+export function allowPreviewRequest(rawUrl: string): boolean {
+  if (rawUrl.startsWith("data:")) return true;
+  let u: URL;
+  try { u = new URL(rawUrl); } catch { return false; }
+  return blockedReason(u) === null;
+}
+
+/** Resource kinds the preview never needs (saves time and Cloudflare browser minutes). */
+export const PREVIEW_SKIP_TYPES = ["media", "font", "websocket", "eventsource", "manifest", "other"] as const;

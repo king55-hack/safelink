@@ -51,6 +51,14 @@ For HTTPS destinations the Worker shows the newest valid certificate (issuer and
 
 Limits, on purpose: Workers cannot open raw sockets to Cloudflare-proxied sites and the free CertSpotter API only lists current certificates, so this check only ever *adds* a warning or a detail; it never claims a site is safe.
 
+## Safe preview (screenshot)
+
+"Show a safe preview" (button in every result, never automatic) calls `POST /api/preview`. The Worker opens the link in **Cloudflare Browser Rendering** (a remote Chrome) and returns only a JPEG, so nothing from the site runs on the visitor's device.
+
+- Every request the remote browser makes (the page, redirects, images, scripts) is checked: only public `http(s)` hostnames on standard ports are allowed (`allowPreviewRequest`, unit-tested). Media/fonts/websockets are skipped.
+- Cost control: per-IP rate limit (3/min), a cache (1 hour, so repeated previews are free) and a daily cap on *new* previews (`PREVIEW_DAILY_MAX`, default 60, counted in D1 table `preview_usage` - apply `migrations/0002_preview_usage.sql`). The browser is always closed in a `finally`.
+- Needs the `BROWSER` binding and `nodejs_compat` (both in `wrangler.jsonc`) and an account that has Browser Rendering (Workers Paid, or the free allowance). `npm run dev` runs a local Chrome for it.
+
 ## VirusTotal
 
 With `VIRUSTOTAL_KEY` set, the Worker asks VirusTotal what its security engines say about the link's final URL (and the domain if the URL is unknown). 3+ engines flagging it = dangerous; 1–2 = "be careful" (it can be a false alarm). Answers are cached for an hour because the free API allows only ~4 requests/minute, and quota errors are skipped silently. The free VirusTotal API is for non-commercial use only.

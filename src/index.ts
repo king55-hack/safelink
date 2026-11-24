@@ -1,5 +1,6 @@
+import puppeteer from "@cloudflare/puppeteer";
 import { connect } from "cloudflare:sockets";
-import { blockedReason, parseInput, parseRdap, pageParams, parseVtStats, registrableDomain, sanitizeReport, summarizeCerts, timingSafeEqualBytes, vtUrlId, type CertSummary, type RdapInfo, type VtStats } from "./lib.ts";
+import { PREVIEW_SKIP_TYPES, allowPreviewRequest, blockedReason, parseInput, parseRdap, pageParams, parseVtStats, registrableDomain, sanitizeReport, summarizeCerts, timingSafeEqualBytes, vtUrlId, type CertSummary, type RdapInfo, type VtStats } from "./lib.ts";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -13,6 +14,12 @@ export interface Env {
   REPORT_LIMITER?: RateLimit;
   /** Per-IP limiter for /api/admin/* */
   ADMIN_LIMITER?: RateLimit;
+  /** Per-IP limiter for /api/preview (each preview uses Cloudflare Browser Rendering minutes) */
+  PREVIEW_LIMITER?: RateLimit;
+  /** Cloudflare Browser Rendering binding (screenshot preview) */
+  BROWSER?: Fetcher;
+  /** Daily cap on NEW previews (cached ones are free). Default 60. */
+  PREVIEW_DAILY_MAX?: string;
   /** Secret token that unlocks /admin (>= 16 chars; wrangler secret put ADMIN_TOKEN) */
   ADMIN_TOKEN?: string;
   /** D1 database holding community reports */
@@ -315,6 +322,67 @@ async function handleCheck(request: Request, env: Env): Promise<Response> {
   });
 }
 
+/* ---------------- screenshot preview ---------------- */
+
+const PREVIEW_W = 1024, PREVIEW_H = 640;
+
+async function handlePreview(request: Request, env: Env): Promise<Response> {
+  if (request.method !== "POST") return json({ error: "use POST" }, 405);
+  if (!env.BROWSER) return json({ error: "preview unavailable" }, 503);
+
+  if (env.PREVIEW_LIMITER) {
+    const { success } = await env.PREVIEW_LIMITER.limit({ key: request.headers.get("cf-connecting-ip") ?? "unknown" });
+    if (!success) return new Response(JSON.stringify({ error: "rate limited" }), { status: 429, headers: { "content-type": "application/json; charset=utf-8", "retry-after": "60", "cache-control": "no-store" } });
+  }
+  if (Number(request.headers.get("content-length") ?? 0) > 4096) return json({ error: "request too large" }, 413);
+
+  let body: any;
+  try { body = await request.json(); } catch { return json({ error: "invalid json" }, 400); }
+  if (typeof body?.url !== "string") return json({ error: "missing url" }, 400);
+  const target = parseInput(body.url);
+  if (!target || blockedReason(target)) return json({ error: "not previewable" }, 400);
+
+  // a screenshot we already took in the last hour is free
+  const cache = caches.default;
+  const cacheKey = new Request("https://preview-cache.safelink.invalid/" + encodeURIComponent(target.href));
+  const hit = await cache.match(cacheKey);
+  if (hit) return json({ image: await hit.text(), cached: true });
+
+  // cap on new previews per day: every one costs Browser Rendering time
+  if (env.DB) {
+    try {
+      const max = Math.max(1, Number(env.PREVIEW_DAILY_MAX) || 60);
+      const day = new Date().toISOString().slice(0, 10);
+      const row = await env.DB.prepare("INSERT INTO preview_usage (day, n) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET n = n + 1 RETURNING n").bind(day).first<{ n: number }>();
+      if ((row?.n ?? 0) > max) return json({ error: "daily limit" }, 429);
+    } catch { /* if the counter is unavailable, fall through: the per-IP limit still applies */ }
+  }
+
+  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | undefined;
+  try {
+    browser = await puppeteer.launch(env.BROWSER);
+    const page = await browser.newPage();
+    await page.setViewport({ width: PREVIEW_W, height: PREVIEW_H });
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      // every hop (redirects, images, scripts) must be a public http(s) address
+      if (!allowPreviewRequest(req.url()) || (PREVIEW_SKIP_TYPES as readonly string[]).includes(req.resourceType())) req.abort().catch(() => {});
+      else req.continue().catch(() => {});
+    });
+    page.on("dialog", (d) => { d.dismiss().catch(() => {}); });
+    await page.goto(target.href, { waitUntil: "domcontentloaded", timeout: 12000 });
+    await new Promise((r) => setTimeout(r, 1500)); // let the page paint
+    const b64 = (await page.screenshot({ type: "jpeg", quality: 55, encoding: "base64" })) as string;
+    const image = "data:image/jpeg;base64," + b64;
+    await cache.put(cacheKey, new Response(image, { headers: { "content-type": "text/plain", "cache-control": "max-age=3600" } }));
+    return json({ image });
+  } catch {
+    return json({ error: "preview failed" }, 502);
+  } finally {
+    await browser?.close().catch(() => {}); // always close, or the minutes keep running
+  }
+}
+
 /* ---------------- admin API (token protected) ---------------- */
 
 async function sha256Bytes(s: string): Promise<Uint8Array> {
@@ -371,6 +439,7 @@ export default {
     const { pathname } = new URL(request.url);
     if (pathname === "/api/check") return handleCheck(request, env);
     if (pathname === "/api/report") return handleReport(request, env);
+    if (pathname === "/api/preview") return handlePreview(request, env);
     if (pathname.startsWith("/api/admin/")) return handleAdmin(request, env, new URL(request.url));
     if (pathname.startsWith("/api/")) return json({ error: "not found" }, 404);
     return env.ASSETS.fetch(request);
